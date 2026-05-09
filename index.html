@@ -1,0 +1,1251 @@
+﻿<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>NAFTAL - Gestion Commandes & Réalisations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --bg-primary: #eef2f3;
+            --bg-secondary: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --border-color: #e2e8f0;
+            --accent: #4f46e5;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --gold: #d4af37;
+        }
+        body.dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --border-color: #334155;
+            --gold: #fbbf24;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg-primary); color: var(--text-primary); padding: 20px; transition: all 0.3s; }
+        .container-custom { max-width: 1600px; margin: 0 auto; }
+        .glass-card { background: var(--card-bg); backdrop-filter: blur(8px); border-radius: 28px; border: 1px solid var(--border-color); margin-bottom: 25px; overflow: hidden; }
+        .card-header-premium { background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 28px 28px 0 0; padding: 16px 24px; color: white; font-weight: 700; }
+        .form-control, .form-select { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 10px 14px; color: var(--text-primary); }
+        .btn-premium { background: linear-gradient(135deg, #4f46e5, #7c3aed); border: none; border-radius: 14px; padding: 10px 18px; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-premium:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(79,70,229,0.3); }
+        .btn-outline { background: transparent; border: 1.5px solid var(--accent); border-radius: 14px; padding: 8px 16px; color: var(--accent); font-weight: 500; cursor: pointer; }
+        .btn-danger-custom { background: linear-gradient(135deg, #ef4444, #dc2626); border: none; border-radius: 12px; padding: 4px 12px; color: white; font-size: 0.7rem; cursor: pointer; }
+        .btn-success-custom { background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 12px; padding: 6px 12px; color: white; font-size: 0.7rem; cursor: pointer; }
+        .btn-warning-custom { background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 12px; padding: 6px 12px; color: white; font-size: 0.7rem; cursor: pointer; }
+        .btn-info-custom { background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 12px; padding: 6px 12px; color: white; font-size: 0.7rem; cursor: pointer; }
+        .table-premium { color: var(--text-primary); margin: 0; width: 100%; }
+        .table-premium thead th { background: rgba(79,70,229,0.08); border-bottom: 2px solid var(--accent); padding: 12px; font-size: 0.8rem; }
+        .table-premium tbody tr { border-bottom: 1px solid var(--border-color); }
+        .table-premium tbody tr:hover { background: rgba(79,70,229,0.05); }
+        .badge-soldee { background: linear-gradient(135deg, #10b981, #059669); padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; color: white; display: inline-block; }
+        .badge-non-soldee { background: linear-gradient(135deg, #ef4444, #dc2626); padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; color: white; }
+        .badge-retard { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; color: white; }
+        .badge-attente { background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; color: white; }
+        .progress-custom { height: 10px; background: var(--border-color); border-radius: 12px; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, #10b981, #34d399); border-radius: 12px; height: 100%; transition: width 0.3s; }
+        .custom-tabs { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+        .tab-btn { background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 10px 24px; border-radius: 40px; color: var(--text-secondary); font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border-color: transparent; }
+        .tab-pane { display: none; animation: fadeIn 0.25s ease; }
+        .tab-pane.active-pane { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .dashboard-card { background: var(--card-bg); border-radius: 24px; padding: 18px; text-align: center; border: 1px solid var(--border-color); margin-bottom: 20px; }
+        .dashboard-number { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .user-info { position: fixed; top: 18px; right: 20px; z-index: 110; background: var(--card-bg); backdrop-filter: blur(12px); padding: 8px 18px; border-radius: 50px; border: 1px solid var(--border-color); font-weight: 500; }
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-primary); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .login-card { background: var(--card-bg); border-radius: 36px; padding: 36px; width: 420px; border: 1px solid var(--border-color); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .dark-mode-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 110; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 60px; padding: 8px 18px; cursor: pointer; }
+        .user-badge { padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; display: inline-block; color: white; }
+        .badge-admin { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .badge-user { background: linear-gradient(135deg, #10b981, #059669); }
+        .badge-transporteur { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .badge-client { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+        .detail-livraison { font-size: 0.7rem; color: var(--text-secondary); margin-top: 5px; }
+        .naftal-logo-container { position: fixed; top: 15px; left: 20px; z-index: 110; display: flex; align-items: center; gap: 10px; background: var(--card-bg); padding: 5px 15px 5px 10px; border-radius: 60px; border: 1px solid var(--border-color); }
+        .naftal-logo-img { height: 45px; width: auto; border-radius: 8px; }
+        .btn-add-logo { background: linear-gradient(135deg, #d4af37, #b8941a); border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2rem; cursor: pointer; transition: all 0.3s; }
+        .signature-gold { position: fixed; bottom: 15px; left: 20px; z-index: 110; font-family: 'Amiri', serif; font-size: 0.8rem; color: var(--gold); direction: rtl; font-weight: bold; }
+        .notification-bell { position: relative; cursor: pointer; margin-right: 15px; }
+        .notification-badge { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+        .filter-client-input { background: var(--bg-secondary); border: 2px solid var(--gold); border-radius: 30px; padding: 10px 20px; font-size: 1rem; }
+        .ligne-attente { background: rgba(139,92,246,0.1) !important; }
+        .delai-badge { background: #10b98120; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; display: inline-block; }
+        @media (max-width: 768px) {
+            .naftal-logo-img { height: 35px; }
+            .signature-gold { font-size: 0.6rem; bottom: 10px; left: 10px; }
+            .login-card { width: 95%; margin: 10px; padding: 20px; }
+            .tab-btn { padding: 6px 12px; font-size: 0.75rem; }
+            .table-premium { font-size: 0.65rem; }
+            .table-premium td, .table-premium th { padding: 6px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+        <div class="text-center mb-4">
+            <i class="fas fa-oil-can" style="font-size: 3rem; color: #d4af37;"></i>
+            <h2 style="color: var(--accent);">NAFTAL</h2>
+            <p class="text-muted">Gestion Commandes & Réalisations</p>
+        </div>
+        <select id="userSelect" class="form-control mb-3">
+            <option value="admin">👑 Admin</option>
+            <option value="user">📝 Utilisateur</option>
+            <option value="transporteur">🚛 Transporteur</option>
+            <option value="client">👥 Client</option>
+        </select>
+        <input type="password" id="passwordInput" class="form-control mb-3" placeholder="Mot de passe">
+        <div id="clientCodeDiv" style="display:none;">
+            <input type="text" id="clientCodeInput" class="form-control mb-3" placeholder="Code Client (ex: CL001)">
+        </div>
+        <button class="btn btn-premium w-100" id="loginBtn">Se connecter</button>
+        <div class="text-center mt-3 small text-muted">
+            👑 Admin: admin123 | 📝 User: user123 | 🚛 Transporteur: trans123
+        </div>
+    </div>
+</div>
+
+<div id="mainApp" style="display:none;">
+    <div class="naftal-logo-container" id="logoContainer">
+        <div id="logoDisplay"><i class="fas fa-oil-can" style="font-size: 32px; color: #d4af37;"></i></div>
+        <div class="btn-add-logo" onclick="addLogoManually()" title="Ajouter logo"><i class="fas fa-plus"></i></div>
+    </div>
+    
+    <div class="dark-mode-toggle" onclick="toggleDarkMode()"><i class="fas fa-moon"></i> <span id="darkModeText">Sombre</span></div>
+    <div class="signature-gold">أعراب رياض</div>
+    <div class="user-info">
+        <div class="notification-bell" id="notificationBell" onclick="showNotifications()">
+            <i class="fas fa-bell"></i>
+            <span id="notificationCount" class="notification-badge" style="display:none;">0</span>
+        </div>
+        <i class="fas fa-user-circle"></i> <strong id="userName"></strong>
+        <span id="userRoleBadge" class="user-badge ms-1"></span>
+        <button class="btn btn-sm btn-outline ms-2 py-0 px-2" onclick="logout()">Déconnexion</button>
+    </div>
+    
+    <div class="container-custom">
+        <div class="text-center mb-4">
+            <h1 style="font-size:2rem;font-weight:800;background:linear-gradient(135deg,#d4af37,#fbbf24,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent;">
+                <i class="fas fa-oil-can"></i> NAFTAL - Gestion Commandes
+            </h1>
+        </div>
+        
+        <!-- Dashboard Réalisations d'hier -->
+        <div class="row mb-4" id="dashboardRow">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <h4><i class="fas fa-calendar-day"></i> Réalisations d'hier: <span id="yesterdayDate"></span></h4>
+                    <div class="table-responsive">
+                        <table class="table table-premium">
+                            <thead><tr><th>Client</th><th>Code</th><th>Produit</th><th>Quantité commandée (m³)</th><th>Quantité réalisée (m³)</th><th>Taux</th></tr></thead>
+                            <tbody id="yesterdayTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="custom-tabs" id="tabsContainer"></div>
+
+        <!-- Demandes clients en attente -->
+        <div id="tabDemandes" class="tab-pane">
+            <div class="glass-card">
+                <div class="card-header-premium">
+                    <i class="fas fa-clock"></i> 📋 Demandes clients en attente de validation
+                    <span id="demandesCount" class="badge bg-warning ms-2">0</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-premium">
+                            <thead><tr><th>Date</th><th>Heure</th><th>Client</th><th>Code</th><th>Produit</th><th>Citernes</th><th>Qté (m³)</th><th>Destination</th><th>Demandé par</th><th>Actions</th></tr></thead>
+                            <tbody id="demandesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enregistrement -->
+        <div id="tabRegister" class="tab-pane">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="glass-card">
+                        <div class="card-header-premium"><i class="fas fa-plus-circle"></i> Nouvelle Commande</div>
+                        <div class="card-body p-4">
+                            <form id="commandeForm">
+                                <div class="row g-3">
+                                    <div class="col-6"><label>📅 Date</label><input type="text" id="cmdDate" class="form-control" readonly></div>
+                                    <div class="col-6"><label>⏰ Heure</label><input type="text" id="cmdHeure" class="form-control" readonly></div>
+                                    <div class="col-6"><label>🏷️ Code Client</label>
+                                        <input type="text" id="cmdCodeClient" class="form-control" list="clientsCodeList" autocomplete="off" placeholder="Ex: CL001" required>
+                                        <datalist id="clientsCodeList"></datalist>
+                                    </div>
+                                    <div class="col-6"><label>👤 Client</label><input type="text" id="cmdClient" class="form-control" readonly></div>
+                                    <div class="col-6"><label>⛽ Produit</label><select id="cmdProduit" class="form-select"><option>Gasoil</option><option>Sans Plomb</option></select></div>
+                                    <div class="col-6"><label>🚛 Citernes</label><input type="number" id="cmdNbCiternes" class="form-control" min="1" required></div>
+                                    <div class="col-4"><label>📦 Qté (m³)</label><input type="text" id="cmdQuantite" class="form-control" readonly></div>
+                                    <div class="col-4"><label>📍 Destination</label><input type="text" id="cmdDestination" class="form-control" list="destinationsList" autocomplete="off" required><datalist id="destinationsList"></datalist></div>
+                                    <div class="col-4 d-flex gap-2"><button type="submit" class="btn btn-premium w-100"><i class="fas fa-save"></i> Ajouter</button><button type="button" class="btn btn-outline" onclick="resetCommandeForm()"><i class="fas fa-undo-alt"></i> Nouveau</button></div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-card">
+                        <div class="card-header-premium"><i class="fas fa-check-circle"></i> Nouvelle Réalisation</div>
+                        <div class="card-body p-4">
+                            <div class="mb-3"><label>🔍 Filtrer commandes</label><input type="text" id="filterCommandesList" class="form-control" placeholder="Client ou code"></div>
+                            <div id="commandesListContainer" class="row-commandes-list" style="max-height:350px; overflow-y:auto;"></div>
+                            <div id="selectedCommandeDetail" class="detail-commande mt-3" style="display:none; background:rgba(79,70,229,0.08); border-radius:16px; padding:12px;"></div>
+                            <hr>
+                            <form id="realisationForm">
+                                <input type="hidden" id="realCmdId" value="">
+                                <div class="row g-3">
+                                    <div class="col-6"><label>📅 Date réalisation</label><input type="text" id="realDate" class="form-control" readonly></div>
+                                    <div class="col-6"><label>⏰ Heure réalisation</label><input type="text" id="realHeure" class="form-control" readonly></div>
+                                    <div class="col-6"><label>🔢 FR N°</label><input type="text" id="realFR" class="form-control" list="frList" autocomplete="off" required><datalist id="frList"></datalist></div>
+                                    <div class="col-6"><label>👨‍✈️ Chauffeur</label><input type="text" id="realChauffeur" class="form-control" list="chauffeursList" autocomplete="off" required><datalist id="chauffeursList"></datalist></div>
+                                    <div class="col-6"><label>📦 Qté (m³)</label><input type="number" id="realQuantite" class="form-control" step="1" min="1" required></div>
+                                    <div class="col-12"><button type="submit" class="btn btn-premium w-100"><i class="fas fa-check"></i> Ajouter réalisation</button></div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commandes du jour -->
+        <div id="tabToday" class="tab-pane">
+            <div class="glass-card">
+                <div class="card-header-premium">📅 Commandes du jour <input type="date" id="todayFilterDate" class="form-control d-inline-block w-auto ms-2" style="width:150px;"></div>
+                <div class="card-body p-0"><div class="table-responsive"><table class="table table-premium"><thead><tr><th>Heure</th><th>Client</th><th>Code</th><th>Produit</th><th>Qté</th><th>Réalisé</th><th>Restant</th><th>%</th><th>Statut</th><th>Détail livraison</th><th>Créé par</th><th>Actions</th></tr></thead><tbody id="todayTableBody"></tbody></table></div></div>
+            </div>
+        </div>
+
+        <!-- Commandes en instance -->
+        <div id="tabPending" class="tab-pane">
+            <div class="glass-card">
+                <div class="card-header-premium">⏳ Commandes non soldées & Retard</div>
+                <div class="card-body p-0"><div class="table-responsive"><table class="table table-premium"><thead><tr><th>Date Cmd</th><th>Heure</th><th>Client</th><th>Code</th><th>Produit</th><th>Qté</th><th>Réalisé</th><th>Restant</th><th>%</th><th>Statut</th><th>Détail livraison</th><th>Créé par</th><th>Actions</th></tr></thead><tbody id="pendingTableBody"></tbody></table></div></div>
+            </div>
+        </div>
+
+        <!-- Espace Client -->
+        <div id="tabClient" class="tab-pane">
+            <div class="glass-card">
+                <div class="card-header-premium">
+                    <i class="fas fa-user"></i> Mon Espace Client
+                    <button class="btn btn-sm btn-warning-custom float-end" onclick="demanderRappel()" id="rappelBtn"><i class="fas fa-bell"></i> Rappel retard</button>
+                    <button class="btn btn-sm btn-success-custom float-end me-2" onclick="showNouvelleCommandeClient()" id="nouvelleCmdBtn"><i class="fas fa-plus"></i> Nouvelle commande</button>
+                </div>
+                <div class="card-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">🔑 Code client:</label>
+                        <input type="text" id="clientFilterCode" class="form-control filter-client-input" style="font-size:1.1rem;" readonly>
+                        <button class="btn btn-premium mt-2" onclick="filtrerClientData()"><i class="fas fa-search"></i> Afficher mes commandes</button>
+                    </div>
+                    <div id="clientDataContainer">
+                        <div class="alert alert-info">Cliquez sur "Afficher mes commandes" pour voir vos commandes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Base clients -->
+        <div id="tabClients" class="tab-pane">
+            <div class="glass-card">
+                <div class="card-header-premium">👥 Base clients</div>
+                <div class="card-body p-3">
+                    <div class="row mb-3"><div class="col-md-4"><input type="text" id="newClientCode" class="form-control" placeholder="Code (ex: CL010)"></div><div class="col-md-4"><input type="text" id="newClientName" class="form-control" placeholder="Nom client"></div><div class="col-md-4"><button class="btn btn-premium" onclick="addClient()"><i class="fas fa-plus"></i> Ajouter</button></div></div>
+                    <div class="table-responsive"><table class="table table-premium"><thead><tr><th>Code</th><th>Nom</th><th>Action</th></tr></thead><tbody id="clientsTableBody"></tbody></table></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestion utilisateurs -->
+        <div id="tabUsers" class="tab-pane">
+            <div class="glass-card">
+                <div class="card-header-premium"><i class="fas fa-users"></i> Gestion des utilisateurs</div>
+                <div class="card-body p-3">
+                    <div class="row mb-4">
+                        <div class="col-md-3"><input type="text" id="newUsername" class="form-control" placeholder="Nom"></div>
+                        <div class="col-md-3"><input type="password" id="newUserPassword" class="form-control" placeholder="Mot de passe"></div>
+                        <div class="col-md-3"><select id="newUserRole" class="form-select"><option value="user">Utilisateur</option><option value="transporteur">Transporteur</option></select></div>
+                        <div class="col-md-3"><button class="btn btn-premium w-100" onclick="addUser()"><i class="fas fa-user-plus"></i> Ajouter</button></div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-premium">
+                            <thead><tr><th>Nom</th><th>Rôle</th><th>Permissions</th><th>Actions</th></tr></thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal détail client -->
+        <div class="modal fade" id="clientDetailModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">Détail des livraisons avec délai</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="clientDetailBody"></div></div></div></div>
+        
+        <!-- Modal nouvelle commande client -->
+        <div class="modal fade" id="nouvelleCommandeModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">📝 Nouvelle demande de commande</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+            <form id="clientCommandeForm">
+                <div class="mb-3"><label>Code Client</label><input type="text" id="clientCmdCode" class="form-control" readonly></div>
+                <div class="mb-3"><label>Produit</label><select id="clientCmdProduit" class="form-select"><option>Gasoil</option><option>Sans Plomb</option></select></div>
+                <div class="mb-3"><label>Nombre de citernes</label><input type="number" id="clientCmdNbCiternes" class="form-control" min="1" required></div>
+                <div class="mb-3"><label>Destination</label><input type="text" id="clientCmdDestination" class="form-control" required></div>
+                <div class="alert alert-warning small">⚠️ Cette demande sera examinée par nos équipes avant validation.</div>
+                <button type="submit" class="btn btn-premium w-100">Envoyer la demande</button>
+            </form>
+        </div></div></div></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ============ FIREBASE CONFIGURATION ============
+    const firebaseConfig = {
+        apiKey: "AIzaSyDrfuUcrRNvW1xfMW7ZFYUqjZy7Ej3-xcc",
+        authDomain: "naftal-gestion.firebaseapp.com",
+        databaseURL: "https://naftal-gestion-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "naftal-gestion",
+        storageBucket: "naftal-gestion.firebasestorage.app",
+        messagingSenderId: "793589485216",
+        appId: "1:793589485216:web:c09eed21df0d924966c3c5"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // ============ DONNÉES ==========
+    let clientsDB = [];
+    let usersDB = [];
+    let demandesClient = [];
+    let commandes = [];
+    let realisations = [];
+    let notifications = [];
+    let currentUserRole = null, currentUserName = null, currentUserId = null, currentClientCode = null, selectedCommandeIdForReal = null;
+    let currentUserPermissions = null;
+    let savedLogo = localStorage.getItem('naftalLogo');
+    
+    // Permissions par défaut
+    const defaultPermissions = {
+        admin: { ajouterCommande: true, ajouterRealisation: true, validerDemandes: true, annulerRealisation: true, voirDashboard: true },
+        user: { ajouterCommande: true, ajouterRealisation: true, validerDemandes: true, annulerRealisation: false, voirDashboard: true },
+        transporteur: { ajouterCommande: false, ajouterRealisation: false, validerDemandes: false, annulerRealisation: false, voirDashboard: true }
+    };
+
+    // ============ INITIALISATION DES DONNÉES FIREBASE ============
+    function initFirebaseData() {
+        // Charger les clients
+        database.ref('clients').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                clientsDB = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+            } else {
+                // Données par défaut
+                const defaultClients = [
+                    { code: 'CL001', nom: 'SARL Transport' },
+                    { code: 'CL002', nom: 'Entreprise Benali' },
+                    { code: 'CL003', nom: 'Logistique Sud' },
+                    { code: 'E2206', nom: 'ENTP' }
+                ];
+                defaultClients.forEach(client => {
+                    database.ref('clients').push(client);
+                });
+            }
+            renderAll();
+        });
+
+        // Charger les utilisateurs
+        database.ref('users').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                usersDB = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+            } else {
+                // Utilisateurs par défaut
+                const defaultUsers = [
+                    { username: 'admin', password: 'admin123', role: 'admin', permissions: defaultPermissions.admin },
+                    { username: 'user', password: 'user123', role: 'user', permissions: defaultPermissions.user },
+                    { username: 'transporteur', password: 'trans123', role: 'transporteur', permissions: defaultPermissions.transporteur }
+                ];
+                defaultUsers.forEach(user => {
+                    database.ref('users').push(user);
+                });
+            }
+            renderUsersTable();
+        });
+
+        // Charger les demandes clients
+        database.ref('demandesClient').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                demandesClient = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+            } else {
+                demandesClient = [];
+            }
+            renderAll();
+        });
+
+        // Charger les commandes
+        database.ref('commandes').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                commandes = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+            } else {
+                commandes = [];
+            }
+            renderAll();
+        });
+
+        // Charger les réalisations
+        database.ref('realisations').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                realisations = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+            } else {
+                realisations = [];
+            }
+            renderAll();
+        });
+
+        // Charger les notifications
+        database.ref('notifications').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                notifications = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+            } else {
+                notifications = [];
+            }
+            updateNotificationBell();
+        });
+    }
+
+    // ============ FONCTIONS LOGO ==========
+    function loadSavedLogo() {
+        const logoDisplay = document.getElementById('logoDisplay');
+        if(savedLogo && logoDisplay) logoDisplay.innerHTML = `<img src="${savedLogo}" alt="NAFTAL" class="naftal-logo-img">`;
+    }
+    function addLogoManually() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    localStorage.setItem('naftalLogo', event.target.result);
+                    savedLogo = event.target.result;
+                    document.getElementById('logoDisplay').innerHTML = `<img src="${event.target.result}" alt="NAFTAL" class="naftal-logo-img">`;
+                    showToast('✅ Logo ajouté!');
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    }
+    
+    // ============ FONCTIONS BASE ==========
+    function getCurrentDateTime() {
+        let now = new Date();
+        let date = now.toLocaleDateString('fr-FR');
+        let heure = now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+        return { date, heure, timestamp: now.getTime() };
+    }
+    
+    function showToast(msg, type='success') { 
+        Toastify({ text: msg, duration: 2500, gravity: "top", position: "right", style: { background: type==='success' ? '#10b981' : '#ef4444', borderRadius:'14px' } }).showToast(); 
+    }
+    
+    function updateNotificationBell() {
+        let count = notifications.filter(n => !n.read && n.targetRole !== 'client').length;
+        let bell = document.getElementById('notificationCount');
+        if(count > 0) { bell.innerText = count; bell.style.display = 'flex'; }
+        else bell.style.display = 'none';
+    }
+    
+    function addNotification(message, type='info', targetRole=null) {
+        const newNotif = { message, type, targetRole, read: false, date: new Date().toLocaleString(), timestamp: Date.now() };
+        database.ref('notifications').push(newNotif);
+        showToast(message, type);
+    }
+    
+    function showNotifications() {
+        let notifList = notifications.filter(n => !n.read && n.targetRole !== 'client');
+        if(notifList.length === 0) { showToast('Aucune notification', 'info'); return; }
+        let html = '<div class="list-group">';
+        notifList.forEach(n => { html += `<div class="list-group-item"><small>${n.date}</small><br>${n.message}</div>`; 
+            database.ref(`notifications/${n.id}`).update({ read: true });
+        });
+        html += '</div>';
+        Swal.fire({ title: 'Notifications', html: html, icon: 'info', confirmButtonColor: '#4f46e5' });
+    }
+    
+    // ============ PERMISSIONS ==========
+    function hasPermission(permission) {
+        if(currentUserRole === 'admin') return true;
+        return currentUserPermissions && currentUserPermissions[permission] === true;
+    }
+    
+    // ============ CALCUL DÉLAI ==========
+    function calculerDelaiPrecis(cmdTimestamp, realTimestamp) {
+        let diffMs = realTimestamp - cmdTimestamp;
+        if(diffMs <= 0) return '0s';
+        let seconds = Math.floor(diffMs/1000);
+        let minutes = Math.floor(seconds/60);
+        let hours = Math.floor(minutes/60);
+        let days = Math.floor(hours/24);
+        seconds %= 60;
+        minutes %= 60;
+        hours %= 24;
+        let parts = [];
+        if(days>0) parts.push(`${days}j`);
+        if(hours>0) parts.push(`${hours}h`);
+        if(minutes>0) parts.push(`${minutes}m`);
+        if(seconds>0) parts.push(`${seconds}s`);
+        return parts.join(' ') || '0s';
+    }
+    
+    // ============ CONFIRMATION POUR COMMANDE EN INSTANCE ==========
+    async function checkPendingAndConfirm(clientCode) {
+        let pending = commandes.filter(c => c.codeClient === clientCode && getRealiseByCommande(c.id) < c.quantite);
+        if(pending.length === 0) return 'add';
+        
+        const result = await Swal.fire({
+            title: '⚠️ Commande en instance',
+            text: `Ce client a ${pending.length} commande(s) non soldée(s). Que faire ?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '🗑️ Supprimer ancienne + Nouvelle',
+            cancelButtonText: '📦 Garder + Ajouter nouvelle',
+            cancelButtonColor: '#f59e0b'
+        });
+        
+        if(result.isConfirmed) {
+            for(let p of pending) {
+                database.ref(`commandes/${p.id}`).remove();
+                const realisationsToDelete = realisations.filter(r => r.commandeId === p.id);
+                for(let r of realisationsToDelete) {
+                    database.ref(`realisations/${r.id}`).remove();
+                }
+            }
+            addNotification(`🗑️ Anciennes commandes de ${clientCode} supprimées`, 'warning', 'admin');
+            return 'add';
+        } else {
+            return 'add';
+        }
+    }
+    
+    // ============ DASHBOARD HIER ==========
+    function updateYesterdayDashboard() {
+        let yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        let yesterdayStr = yesterday.toLocaleDateString('fr-FR');
+        document.getElementById('yesterdayDate').innerText = yesterdayStr;
+        
+        let yesterdayCommandes = commandes.filter(c => c.date === yesterdayStr);
+        let yesterdayHtml = '';
+        
+        if(yesterdayCommandes.length === 0) {
+            yesterdayHtml = '</table><td colspan="6" class="text-center">Aucune commande pour cette date</td></tr>';
+        } else {
+            yesterdayCommandes.forEach(cmd => {
+                let realise = getRealiseByCommande(cmd.id);
+                let percent = (realise/cmd.quantite)*100;
+                yesterdayHtml += `<tr>
+                    <td><strong>${cmd.client}</strong></td>
+                    <td>${cmd.codeClient}</td>
+                    <td>${cmd.produit}</td>
+                    <td>${cmd.quantite} m³</td>
+                    <td class="text-success fw-bold">${realise} m³</td>
+                    <td><div class="progress-custom"><div class="progress-fill" style="width:${percent}%"></div></div><small>${Math.round(percent)}%</small></td>
+                </tr>`;
+            });
+        }
+        document.getElementById('yesterdayTableBody').innerHTML = yesterdayHtml;
+    }
+    
+    // ============ GESTION CLIENTS ==========
+    function getClientNameByCode(code) { 
+        let c = clientsDB.find(c => c.code === code); 
+        return c ? c.nom : ''; 
+    }
+    
+    function updateClientSelect() { 
+        let list = document.getElementById('clientsCodeList'); 
+        if(list) list.innerHTML = clientsDB.map(c => `<option value="${c.code}">${c.code} - ${c.nom}</option>`).join(''); 
+    }
+    
+    document.getElementById('cmdCodeClient')?.addEventListener('input', function() {
+        let code = this.value;
+        document.getElementById('cmdClient').value = getClientNameByCode(code) || '';
+    });
+    
+    function addClient() { 
+        if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error');
+        let code = document.getElementById('newClientCode').value.trim(); 
+        let nom = document.getElementById('newClientName').value.trim(); 
+        if(!code||!nom) return showToast('Champs requis','error'); 
+        if(clientsDB.find(c => c.code === code)) return showToast('Code existe','error'); 
+        database.ref('clients').push({ code, nom });
+        showToast('Client ajouté'); 
+        document.getElementById('newClientCode').value = ''; 
+        document.getElementById('newClientName').value = ''; 
+    }
+    
+    function deleteClient(clientId, code) { 
+        if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error');
+        if(commandes.some(c => c.codeClient === code)) return showToast('Ce client a des commandes','error'); 
+        database.ref(`clients/${clientId}`).remove();
+        showToast('Client supprimé'); 
+    }
+    
+    function renderClientsTable() { 
+        let html = ''; 
+        clientsDB.forEach(c => { 
+            html += `<tr>
+                <td><strong>${c.code}</strong></td>
+                <td>${c.nom}</td>
+                <td>${currentUserRole === 'admin' ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteClient('${c.id}', '${c.code}')"><i class="fas fa-trash"></i> Supprimer</button>` : '—'}</td>
+            </tr>`; 
+        }); 
+        if(document.getElementById('clientsTableBody')) document.getElementById('clientsTableBody').innerHTML = html; 
+    }
+    
+    // ============ CLIENT - FONCTIONS ==========
+    function demanderRappel() {
+        let codeClient = currentClientCode;
+        if(!codeClient) { showToast('Code client non trouvé', 'error'); return; }
+        let clientCmd = commandes.find(c => c.codeClient === codeClient && getRealiseByCommande(c.id) < c.quantite);
+        if(!clientCmd) { showToast('Aucune commande en retard pour ce client', 'info'); return; }
+        addNotification(`📢 Client ${codeClient} demande un rappel pour sa commande non soldée`, 'warning', 'admin');
+        addNotification(`📢 Client ${codeClient} demande un rappel`, 'warning', 'user');
+        showToast('✅ Rappel envoyé aux équipes');
+    }
+    
+    function showNouvelleCommandeClient() {
+        let codeClient = currentClientCode;
+        if(!codeClient) { showToast('Code client non trouvé', 'error'); return; }
+        document.getElementById('clientCmdCode').value = codeClient;
+        new bootstrap.Modal(document.getElementById('nouvelleCommandeModal')).show();
+    }
+    
+    document.getElementById('clientCommandeForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        let codeClient = document.getElementById('clientCmdCode').value;
+        let clientName = getClientNameByCode(codeClient);
+        let nb = parseInt(document.getElementById('clientCmdNbCiternes').value);
+        let now = getCurrentDateTime();
+        
+        const newDemande = {
+            date: now.date,
+            heure: now.heure,
+            timestamp: now.timestamp,
+            codeClient: codeClient,
+            client: clientName,
+            produit: document.getElementById('clientCmdProduit').value,
+            nbCiternes: nb,
+            quantite: nb * 27,
+            destination: document.getElementById('clientCmdDestination').value,
+            createdBy: clientName,
+            status: 'en_attente'
+        };
+        
+        database.ref('demandesClient').push(newDemande);
+        addNotification(`🆕 Nouvelle demande de commande de ${clientName} (${codeClient}) - ${nb*27} m³ en attente de validation`, 'success', 'admin');
+        addNotification(`🆕 Nouvelle demande de commande de ${clientName} à valider`, 'success', 'user');
+        showToast('✅ Demande envoyée, en attente de validation');
+        bootstrap.Modal.getInstance(document.getElementById('nouvelleCommandeModal')).hide();
+    });
+    
+    function filtrerClientData() {
+        let code = currentClientCode;
+        if(!code) return;
+        document.getElementById('clientFilterCode').value = code;
+        let clientCommandes = commandes.filter(c => c.codeClient === code);
+        if(clientCommandes.length === 0) { document.getElementById('clientDataContainer').innerHTML = '<div class="alert alert-info">Aucune commande trouvée</div>'; return; }
+        let html = '';
+        clientCommandes.forEach(cmd => {
+            let realise = getRealiseByCommande(cmd.id);
+            let restant = cmd.quantite - realise;
+            let percent = (realise/cmd.quantite)*100;
+            let status = restant<=0 ? '<span class="badge-soldee">Soldée</span>' : (isCommandeRetardee(cmd) ? '<span class="badge-retard">⚠️ En retard</span>' : '<span class="badge-non-soldee">Non soldée</span>');
+            let deliveries = getRealisationsByCommande(cmd.id);
+            let detailLivraison = deliveries.length > 0 ? deliveries.map(d => `<div>🚛 FR:${d.fr} | Chauffeur:${d.chauffeur} | ${d.quantite}m³ | ${d.date} ${d.heure}</div>`).join('') : '<div>Aucune livraison</div>';
+            html += `<div class="card mb-3 p-3" style="background:var(--bg-secondary);border-radius:16px;">
+                <div class="d-flex justify-content-between"><strong>📅 ${cmd.date} ${cmd.heure}</strong> ${status}</div>
+                <div>⛽ ${cmd.produit} | 🚛 ${cmd.nbCiternes} citernes | 📦 ${cmd.quantite} m³</div>
+                <div class="progress-custom my-2"><div class="progress-fill" style="width:${percent}%"></div></div>
+                <div>✅ Réalisé: ${realise} m³ | ⚠️ Restant: ${restant} m³</div>
+                <div class="mt-2"><strong>📋 Livraisons:</strong> ${detailLivraison}</div>
+                <div class="mt-1"><small>📝 Validé par: ${cmd.validePar || 'admin'} le ${cmd.valideLe || cmd.date}</small></div>
+            </div>`;
+        });
+        document.getElementById('clientDataContainer').innerHTML = html;
+    }
+    
+    // ============ VALIDATION DEMANDE CLIENT ==========
+    function validerDemande(id) {
+        if(!hasPermission('validerDemandes')) return showToast('Permission refusée', 'error');
+        let demande = demandesClient.find(d => d.id === id);
+        if(!demande) return;
+        
+        Swal.fire({
+            title: '✅ Valider la demande',
+            text: `Valider la commande de ${demande.client} ?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, valider',
+            cancelButtonText: 'Annuler'
+        }).then(result => {
+            if(result.isConfirmed) {
+                let now = getCurrentDateTime();
+                const newCommande = {
+                    date: now.date,
+                    heure: now.heure,
+                    timestamp: now.timestamp,
+                    codeClient: demande.codeClient,
+                    client: demande.client,
+                    produit: demande.produit,
+                    nbCiternes: demande.nbCiternes,
+                    quantite: demande.quantite,
+                    destination: demande.destination,
+                    createdBy: `${demande.createdBy} → ${currentUserName}`,
+                    validePar: currentUserName,
+                    valideLe: new Date().toLocaleString()
+                };
+                
+                database.ref('commandes').push(newCommande);
+                database.ref(`demandesClient/${id}`).remove();
+                addNotification(`✅ Commande de ${demande.client} validée par ${currentUserName}`, 'success', 'admin');
+                addNotification(`✅ Commande de ${demande.client} validée`, 'success', 'user');
+                showToast('Demande validée avec succès');
+            }
+        });
+    }
+    
+    function refuserDemande(id) {
+        if(!hasPermission('validerDemandes')) return showToast('Permission refusée', 'error');
+        let demande = demandesClient.find(d => d.id === id);
+        if(!demande) return;
+        
+        Swal.fire({
+            title: '❌ Refuser la demande',
+            text: `Refuser la commande de ${demande.client} ?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, refuser',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#ef4444'
+        }).then(result => {
+            if(result.isConfirmed) {
+                database.ref(`demandesClient/${id}`).remove();
+                addNotification(`❌ Commande de ${demande.client} refusée par ${currentUserName}`, 'error', 'admin');
+                showToast('Demande refusée');
+            }
+        });
+    }
+    
+    // ============ GESTION UTILISATEURS ==========
+    function addUser() {
+        if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error');
+        let username = document.getElementById('newUsername').value.trim();
+        let password = document.getElementById('newUserPassword').value;
+        let role = document.getElementById('newUserRole').value;
+        if(!username) return showToast('Nom requis', 'error');
+        if(!password) return showToast('Mot de passe requis', 'error');
+        if(usersDB.find(u => u.username === username)) return showToast('Nom existe déjà', 'error');
+        
+        let permissions = role === 'user' ? { ...defaultPermissions.user } : { ...defaultPermissions.transporteur };
+        
+        database.ref('users').push({ username, password, role, permissions });
+        showToast(`Utilisateur ${username} ajouté - Mot de passe: ${password}`);
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newUserPassword').value = '';
+    }
+    
+    function deleteUser(userId, username) {
+        if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error');
+        if(username === 'admin') return showToast('Impossible de supprimer l\'admin', 'error');
+        database.ref(`users/${userId}`).remove();
+        showToast('Utilisateur supprimé');
+    }
+    
+    function renderUsersTable() {
+        let html = '';
+        usersDB.forEach(u => {
+            let roleClass = u.role === 'admin' ? 'badge-admin' : (u.role === 'user' ? 'badge-user' : 'badge-transporteur');
+            let roleName = u.role === 'admin' ? '👑 Admin' : (u.role === 'user' ? '📝 Utilisateur' : '🚛 Transporteur');
+            
+            let perms = u.permissions || (u.role === 'admin' ? defaultPermissions.admin : (u.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur));
+            let permBadges = '';
+            if(perms.ajouterCommande) permBadges += '<span class="badge bg-success me-1">+Cmd</span>';
+            if(perms.ajouterRealisation) permBadges += '<span class="badge bg-success me-1">+Real</span>';
+            if(perms.validerDemandes) permBadges += '<span class="badge bg-warning me-1">Valider</span>';
+            if(perms.annulerRealisation) permBadges += '<span class="badge bg-danger me-1">Annuler</span>';
+            if(perms.voirDashboard) permBadges += '<span class="badge bg-info me-1">Dashboard</span>';
+            
+            html += `<tr>
+                <td><strong>${u.username}</strong></td>
+                <td><span class="user-badge ${roleClass}">${roleName}</span></td>
+                <td>${permBadges}</td>
+                <td>${u.username !== 'admin' && currentUserRole === 'admin' ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteUser('${u.id}', '${u.username}')"><i class="fas fa-trash"></i> Supprimer</button>` : '—'}</td>
+            </tr>`;
+        });
+        document.getElementById('usersTableBody').innerHTML = html;
+    }
+    
+    // ============ FONCTIONS MÉTIER ==========
+    function getRealiseByCommande(cmdId) { 
+        return realisations.filter(r => r.commandeId === cmdId).reduce((s, r) => s + r.quantite, 0); 
+    }
+    function getRealisationsByCommande(cmdId) { 
+        return realisations.filter(r => r.commandeId === cmdId); 
+    }
+    function isCommandeRetardee(cmd) { 
+        let cmdDate = new Date(cmd.timestamp);
+        let today = new Date();
+        today.setHours(0,0,0,0);
+        let realise = getRealiseByCommande(cmd.id);
+        return (cmdDate < today && realise < cmd.quantite);
+    }
+    
+    function deleteRealisation(realId) {
+        if(!hasPermission('annulerRealisation')) return showToast('Permission refusée', 'error');
+        Swal.fire({ title: 'Confirmation', text: 'Annuler cette réalisation?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Oui' }).then(result => {
+            if(result.isConfirmed) { 
+                database.ref(`realisations/${realId}`).remove();
+                showToast('Réalisation annulée'); 
+            }
+        });
+    }
+    
+    function deleteCommande(cmdId) {
+        if(currentUserRole !== 'admin') return showToast('Seul l\'admin peut supprimer','error');
+        Swal.fire({ title: 'Confirmation', text: 'Supprimer cette commande?', icon: 'warning', showCancelButton: true }).then(result => {
+            if(result.isConfirmed) { 
+                database.ref(`commandes/${cmdId}`).remove();
+                const realisationsToDelete = realisations.filter(r => r.commandeId === cmdId);
+                for(let r of realisationsToDelete) {
+                    database.ref(`realisations/${r.id}`).remove();
+                }
+                showToast('Commande supprimée'); 
+            }
+        });
+    }
+    
+    function renderCommandesListForRealisation() {
+        let filter = document.getElementById('filterCommandesList')?.value.toLowerCase() || '';
+        let nonSoldees = commandes.filter(c => getRealiseByCommande(c.id) < c.quantite);
+        let filtered = nonSoldees.filter(c => c.client.toLowerCase().includes(filter) || c.codeClient.toLowerCase().includes(filter));
+        let container = document.getElementById('commandesListContainer');
+        if(!container) return;
+        container.innerHTML = '';
+        filtered.forEach(cmd => {
+            let realise = getRealiseByCommande(cmd.id);
+            let restant = cmd.quantite - realise;
+            let percent = (realise/cmd.quantite)*100;
+            let card = document.createElement('div');
+            card.style.background = 'var(--bg-secondary)';
+            card.style.borderRadius = '16px';
+            card.style.padding = '12px';
+            card.style.marginBottom = '10px';
+            card.style.cursor = 'pointer';
+            card.style.border = selectedCommandeIdForReal === cmd.id ? '2px solid #dc2626' : '2px solid var(--border-color)';
+            card.onclick = () => {
+                document.querySelectorAll('.commande-card').forEach(c=>c.style.borderColor = 'var(--border-color)');
+                card.style.borderColor = '#dc2626';
+                selectedCommandeIdForReal = cmd.id;
+                document.getElementById('realCmdId').value = cmd.id;
+                let detailDiv = document.getElementById('selectedCommandeDetail');
+                detailDiv.style.display = 'block';
+                detailDiv.innerHTML = `<strong>Client:</strong> ${cmd.client} (${cmd.codeClient})<br><strong>Restant:</strong> ${restant} m³ / ${cmd.quantite} m³<div class="progress-custom mt-2"><div class="progress-fill" style="width:${percent}%"></div></div>`;
+                showToast(`Commande sélectionnée: ${cmd.client}`);
+            };
+            card.className = 'commande-card';
+            card.innerHTML = `<div><strong>${cmd.client}</strong> <small>${cmd.codeClient}</small></div><div>📦 ${cmd.quantite} m³ | ✅ ${realise} m³ | ⚠️ ${restant} m³</div><div class="progress-custom mt-1"><div class="progress-fill" style="width:${percent}%"></div></div><small>📍 ${cmd.destination} - ${cmd.date} ${cmd.heure}</small>`;
+            container.appendChild(card);
+        });
+        if(filtered.length===0) container.innerHTML='<div class="text-center p-3">Aucune commande en instance</div>';
+    }
+    
+    function afficherDetailClient(clientName, clientCode) {
+        let realClient = realisations.filter(r => { let cmd = commandes.find(c=>c.id===r.commandeId); return cmd && cmd.client === clientName; });
+        let html = `<h6>Client: ${clientName} (${clientCode})</h6>
+                    <table class="table table-sm">
+                        <thead><tr><th>FR</th><th>Chauffeur</th><th>Qté</th><th>Date réalisation</th><th>Heure réalisation</th><th>Délai après commande</th><th>Enregistré par</th></tr></thead>
+                        <tbody>`;
+        realClient.forEach(r => { 
+            let cmd = commandes.find(c=>c.id===r.commandeId); 
+            let delai = cmd ? calculerDelaiPrecis(cmd.timestamp, r.timestamp) : '-'; 
+            html += `<tr>
+                        <td><strong>${r.fr}</strong></td>
+                        <td>${r.chauffeur}</td>
+                        <td>${r.quantite} m³</td>
+                        <td>${r.date}</td>
+                        <td>${r.heure}</td>
+                        <td><span class="delai-badge">⏱️ ${delai}</span></td>
+                        <td>${r.createdBy || '?'}</td>
+                    </tr>`;
+        });
+        html += `</tbody></table>`;
+        document.getElementById('clientDetailBody').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('clientDetailModal')).show();
+    }
+    
+    function renderAll() {
+        if(!clientsDB.length) return;
+        
+        updateYesterdayDashboard();
+        updateClientSelect();
+        renderClientsTable();
+        renderUsersTable();
+        
+        if(hasPermission('voirDashboard')) {
+            document.getElementById('dashboardRow').style.display = 'flex';
+        } else {
+            document.getElementById('dashboardRow').style.display = 'none';
+        }
+        
+        if(hasPermission('ajouterRealisation')) {
+            renderCommandesListForRealisation();
+        }
+        
+        // Demandes clients en attente
+        if(hasPermission('validerDemandes')) {
+            let demandesHtml = '';
+            let demandesCount = demandesClient.length;
+            document.getElementById('demandesCount').innerText = demandesCount;
+            
+            demandesClient.forEach(dem => {
+                demandesHtml += `<tr class="ligne-attente">
+                    <td>${dem.date}</td>
+                    <td>${dem.heure}</td>
+                    <td><strong>${dem.client}</strong></td>
+                    <td>${dem.codeClient}</td>
+                    <td>${dem.produit}</td>
+                    <td>${dem.nbCiternes}</td>
+                    <td>${dem.quantite} m³</td>
+                    <td>${dem.destination}</td>
+                    <td><span class="badge-attente">${dem.createdBy}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-success-custom me-1" onclick="validerDemande('${dem.id}')"><i class="fas fa-check"></i> Valider</button>
+                        <button class="btn btn-sm btn-danger-custom" onclick="refuserDemande('${dem.id}')"><i class="fas fa-times"></i> Refuser</button>
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('demandesTableBody').innerHTML = demandesHtml || '<tr><td colspan="10" class="text-center">Aucune demande en attente</td></tr>';
+        }
+        
+        if(currentUserRole !== 'client') {
+            // Commandes du jour
+            let todayFilter = document.getElementById('todayFilterDate')?.value || new Date().toLocaleDateString('fr-FR');
+            let todayHtml = '';
+            commandes.filter(c => c.date === todayFilter).forEach(cmd => {
+                let realise = getRealiseByCommande(cmd.id);
+                let restant = cmd.quantite - realise;
+                let percent = (realise/cmd.quantite)*100;
+                let status = restant<=0 ? '<span class="badge-soldee">Soldée</span>' : '<span class="badge-non-soldee">Non soldée</span>';
+                let deliveries = getRealisationsByCommande(cmd.id);
+                let detailLivraison = deliveries.length > 0 ? deliveries.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure}</div>`).join('') : '<div>Aucune livraison</div>';
+                let canDelete = (currentUserRole === 'admin');
+                let actions = '';
+                if(canDelete) actions = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`;
+                actions += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`;
+                
+                todayHtml += `<tr>
+                    <td>${cmd.heure||'--:--'}</td>
+                    <td><strong>${cmd.client}</strong></td>
+                    <td>${cmd.codeClient}</td>
+                    <td>${cmd.produit}</td>
+                    <td>${cmd.quantite} m³</td>
+                    <td>${realise} m³</td>
+                    <td class="text-warning fw-bold">${restant} m³</td>
+                    <td><div class="progress-custom"><div class="progress-fill" style="width:${percent}%"></div></div><small>${Math.round(percent)}%</small></td>
+                    <td>${status}</td>
+                    <td>${detailLivraison}</td>
+                    <td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td>
+                    <td>${actions}</td>
+                </tr>`;
+            });
+            document.getElementById('todayTableBody').innerHTML = todayHtml || '<tr><td colspan="12" class="text-center">Aucune commande aujourd\'hui</td></tr>';
+            
+            // Commandes en instance
+            let pendingHtml = '';
+            commandes.filter(c => getRealiseByCommande(c.id) < c.quantite).forEach(cmd => {
+                let realise = getRealiseByCommande(cmd.id);
+                let restant = cmd.quantite - realise;
+                let percent = (realise/cmd.quantite)*100;
+                let isRetard = isCommandeRetardee(cmd);
+                let status = isRetard ? '<span class="badge-retard">⚠️ En retard</span>' : '<span class="badge-non-soldee">Non soldée</span>';
+                let rowClass = isRetard ? 'ligne-retard' : '';
+                let deliveries = getRealisationsByCommande(cmd.id);
+                let detailLivraison = deliveries.length > 0 ? deliveries.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure} ${hasPermission('annulerRealisation') ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteRealisation('${d.id}')"><i class="fas fa-times"></i> Annuler</button>` : ''}</div>`).join('') : '<div>Aucune livraison</div>';
+                let canDelete = (currentUserRole === 'admin');
+                let actions = '';
+                if(canDelete) actions = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`;
+                actions += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`;
+                
+                pendingHtml += `<tr class="${rowClass}">
+                    <td>${cmd.date}</td>
+                    <td>${cmd.heure||'--:--'}</td>
+                    <td><strong>${cmd.client}</strong></td>
+                    <td>${cmd.codeClient}</td>
+                    <td>${cmd.produit}</td>
+                    <td>${cmd.quantite} m³</td>
+                    <td>${realise} m³</td>
+                    <td class="text-warning fw-bold">${restant} m³</td>
+                    <td><div class="progress-custom"><div class="progress-fill" style="width:${percent}%"></div></div><small>${Math.round(percent)}%</small></td>
+                    <td>${status}</td>
+                    <td>${detailLivraison}</td>
+                    <td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td>
+                    <td>${actions}</td>
+                </tr>`;
+            });
+            document.getElementById('pendingTableBody').innerHTML = pendingHtml || '<tr><td colspan="13" class="text-center">Aucune commande en instance</td></tr>';
+        } else {
+            if(document.getElementById('clientFilterCode')) {
+                document.getElementById('clientFilterCode').value = currentClientCode || '';
+                filtrerClientData();
+            }
+        }
+    }
+    
+    // ============ AUTHENTIFICATION ==========
+    function login() {
+        const role = document.getElementById('userSelect').value;
+        const pwd = document.getElementById('passwordInput').value;
+        
+        if(role === 'client') {
+            let codeClient = document.getElementById('clientCodeInput').value.trim();
+            if(!codeClient) { 
+                Swal.fire('Erreur', 'Entrez votre code client', 'error'); 
+                return; 
+            }
+            let clientExists = clientsDB.find(c => c.code === codeClient);
+            if(!clientExists) { 
+                Swal.fire('Erreur', 'Code client invalide', 'error'); 
+                return; 
+            }
+            currentClientCode = codeClient;
+            currentUserRole = 'client';
+            currentUserName = clientExists.nom;
+            currentUserId = null;
+            currentUserPermissions = null;
+        } else {
+            let user = usersDB.find(u => u.username === role && u.password === pwd);
+            if(!user) {
+                Swal.fire('Erreur', 'Nom d\'utilisateur ou mot de passe incorrect', 'error');
+                return;
+            }
+            currentUserRole = user.role;
+            currentUserName = user.username;
+            currentUserId = user.id;
+            currentClientCode = null;
+            currentUserPermissions = user.permissions || (user.role === 'admin' ? defaultPermissions.admin : (user.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur));
+        }
+        
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        
+        let roleText = currentUserRole === 'admin' ? '👑 Admin' : (currentUserRole === 'user' ? '📝 Utilisateur' : (currentUserRole === 'transporteur' ? '🚛 Transporteur' : '👥 Client'));
+        document.getElementById('userName').innerHTML = currentUserName;
+        let roleBadge = document.getElementById('userRoleBadge');
+        roleBadge.innerHTML = roleText;
+        roleBadge.className = `user-badge ${currentUserRole === 'admin' ? 'badge-admin' : (currentUserRole === 'user' ? 'badge-user' : (currentUserRole === 'transporteur' ? 'badge-transporteur' : 'badge-client'))}`;
+        
+        renderTabsByRole();
+        renderAll();
+        showToast(`👋 Bonjour ${currentUserName}`);
+    }
+    
+    document.getElementById('userSelect')?.addEventListener('change', function() {
+        let showClient = document.getElementById('clientCodeDiv');
+        if(showClient) showClient.style.display = this.value === 'client' ? 'block' : 'none';
+        document.getElementById('passwordInput').value = '';
+    });
+    document.getElementById('loginBtn')?.addEventListener('click', login);
+    document.getElementById('passwordInput')?.addEventListener('keypress', function(e) { if(e.key === 'Enter') login(); });
+    
+    function logout() { 
+        document.getElementById('loginOverlay').style.display = 'flex'; 
+        document.getElementById('mainApp').style.display = 'none'; 
+        document.getElementById('passwordInput').value = '';
+        if(document.getElementById('clientCodeInput')) document.getElementById('clientCodeInput').value = '';
+        currentUserRole = null;
+    }
+    
+    function renderTabsByRole() {
+        let tabs = [];
+        
+        if(currentUserRole === 'client') {
+            tabs.push({id:'client', name:'👥 Mon espace'});
+        } 
+        else if(currentUserRole === 'transporteur') {
+            tabs.push({id:'today', name:'📅 Commandes du jour'});
+            tabs.push({id:'pending', name:'⏳ En instance & Retard'});
+        }
+        else if(currentUserRole === 'admin' || currentUserRole === 'user') {
+            if(hasPermission('validerDemandes')) tabs.push({id:'demandes', name:'📋 Demandes clients'});
+            if(hasPermission('ajouterCommande') || hasPermission('ajouterRealisation')) tabs.push({id:'register', name:'📝 Enregistrement'});
+            if(hasPermission('voirDashboard')) {
+                tabs.push({id:'today', name:'📅 Commandes du jour'});
+                tabs.push({id:'pending', name:'⏳ En instance & Retard'});
+            }
+            if(currentUserRole === 'admin') {
+                tabs.push({id:'clients', name:'👥 Base clients'});
+                tabs.push({id:'users', name:'👥 Gestion utilisateurs'});
+            }
+        }
+        
+        let html = tabs.map((t,i)=>`<div class="tab-btn ${i===0?'active':''}" data-tab="${t.id}">${t.name}</div>`).join('');
+        document.getElementById('tabsContainer').innerHTML = html;
+        
+        document.querySelectorAll('.tab-btn').forEach(btn=>{
+            btn.addEventListener('click',()=>{
+                document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active-pane'));
+                const id = btn.dataset.tab;
+                if(id==='demandes') document.getElementById('tabDemandes').classList.add('active-pane');
+                else if(id==='register') document.getElementById('tabRegister').classList.add('active-pane');
+                else if(id==='today') document.getElementById('tabToday').classList.add('active-pane');
+                else if(id==='pending') document.getElementById('tabPending').classList.add('active-pane');
+                else if(id==='client') document.getElementById('tabClient').classList.add('active-pane');
+                else if(id==='clients') document.getElementById('tabClients').classList.add('active-pane');
+                else if(id==='users') document.getElementById('tabUsers').classList.add('active-pane');
+            });
+        });
+        
+        if(currentUserRole === 'client') {
+            document.getElementById('tabClient').classList.add('active-pane');
+        } else if(currentUserRole === 'transporteur') {
+            document.getElementById('tabToday').classList.add('active-pane');
+        } else if(document.getElementById('tabDemandes') && hasPermission('validerDemandes')) {
+            document.getElementById('tabDemandes').classList.add('active-pane');
+        } else if(document.getElementById('tabToday') && hasPermission('voirDashboard')) {
+            document.getElementById('tabToday').classList.add('active-pane');
+        } else if(document.getElementById('tabRegister') && (hasPermission('ajouterCommande') || hasPermission('ajouterRealisation'))) {
+            document.getElementById('tabRegister').classList.add('active-pane');
+        } else {
+            document.getElementById('tabToday').classList.add('active-pane');
+        }
+    }
+    
+    document.getElementById('cmdNbCiternes')?.addEventListener('input', function(){ let nb = parseInt(this.value)||0; document.getElementById('cmdQuantite').value = (nb*27)+' m³'; });
+    function resetCommandeForm() { 
+        document.getElementById('commandeForm').reset(); 
+        document.getElementById('cmdQuantite').value = ''; 
+        let now = getCurrentDateTime(); 
+        document.getElementById('cmdDate').value = now.date; 
+        document.getElementById('cmdHeure').value = now.heure; 
+        document.getElementById('cmdClient').value = ''; 
+        showToast('Formulaire réinitialisé'); 
+    }
+    
+    document.getElementById('commandeForm')?.addEventListener('submit', async function(e){
+        e.preventDefault(); 
+        if(!hasPermission('ajouterCommande')) return showToast('Permission refusée','error');
+        let codeClient = document.getElementById('cmdCodeClient').value; 
+        let clientName = getClientNameByCode(codeClient);
+        if(!clientName) return showToast('Code client invalide','error');
+        
+        let action = await checkPendingAndConfirm(codeClient);
+        if(action === 'cancel') return;
+        
+        let nb = parseInt(document.getElementById('cmdNbCiternes').value);
+        if(!nb) return showToast('Nombre de citernes invalide','error');
+        let now = getCurrentDateTime();
+        
+        const newCommande = {
+            date: now.date,
+            heure: now.heure,
+            timestamp: now.timestamp,
+            codeClient: codeClient,
+            client: clientName,
+            produit: document.getElementById('cmdProduit').value,
+            nbCiternes: nb,
+            quantite: nb * 27,
+            destination: document.getElementById('cmdDestination').value,
+            createdBy: currentUserName
+        };
+        
+        database.ref('commandes').push(newCommande);
+        showToast('✅ Commande ajoutée'); 
+        resetCommandeForm();
+    });
+    
+    document.getElementById('realisationForm')?.addEventListener('submit', function(e){
+        e.preventDefault(); 
+        if(!hasPermission('ajouterRealisation')) return showToast('Permission refusée','error');
+        let cmdId = document.getElementById('realCmdId').value;
+        if(!cmdId) return showToast('Sélectionnez une commande','error');
+        let cmd = commandes.find(c => c.id === cmdId);
+        if(!cmd) return showToast('Commande introuvable','error');
+        let realiseTotal = getRealiseByCommande(cmdId); 
+        let newQt = parseFloat(document.getElementById('realQuantite').value);
+        if(realiseTotal + newQt > cmd.quantite) return showToast('Quantité dépasse le reste','error');
+        let now = getCurrentDateTime();
+        
+        const newRealisation = {
+            commandeId: cmdId,
+            date: now.date,
+            heure: now.heure,
+            timestamp: now.timestamp,
+            fr: document.getElementById('realFR').value,
+            chauffeur: document.getElementById('realChauffeur').value,
+            quantite: newQt,
+            createdBy: currentUserName
+        };
+        
+        database.ref('realisations').push(newRealisation);
+        showToast('✅ Réalisation ajoutée');
+        document.getElementById('realisationForm').reset(); 
+        document.getElementById('realCmdId').value = ''; 
+        selectedCommandeIdForReal = null; 
+        document.getElementById('selectedCommandeDetail').style.display = 'none';
+    });
+    
+    document.getElementById('filterCommandesList')?.addEventListener('input', () => renderCommandesListForRealisation());
+    document.getElementById('todayFilterDate')?.addEventListener('change', () => renderAll());
+    
+    function toggleDarkMode() { 
+        document.body.classList.toggle('dark'); 
+        localStorage.setItem('darkMode', document.body.classList.contains('dark')); 
+        document.getElementById('darkModeText').innerText = document.body.classList.contains('dark') ? 'Light' : 'Sombre'; 
+    }
+    if(localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark');
+    
+    let nowInit = getCurrentDateTime();
+    if(document.getElementById('realDate')) document.getElementById('realDate').value = nowInit.date;
+    if(document.getElementById('realHeure')) document.getElementById('realHeure').value = nowInit.heure;
+    if(document.getElementById('cmdDate')) document.getElementById('cmdDate').value = nowInit.date;
+    if(document.getElementById('cmdHeure')) document.getElementById('cmdHeure').value = nowInit.heure;
+    
+    loadSavedLogo();
+    initFirebaseData();
+</script>
+</body>
+</html>
