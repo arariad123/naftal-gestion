@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
     <meta charset="UTF-8">
@@ -62,14 +62,14 @@
         .progress-custom { height: 10px; background: var(--border-color); border-radius: 12px; overflow: hidden; }
         .progress-fill { background: linear-gradient(90deg, #10b981, #34d399); border-radius: 12px; height: 100%; transition: width 0.3s; }
         .custom-tabs { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-        .tab-btn { background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 10px 24px; border-radius: 40px; color: var(--text-secondary); font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .tab-btn { background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 10px 24px; border-radius: 40px; color: var(--text-secondary); font-weight: 600; cursor: pointer; }
         .tab-btn.active { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border-color: transparent; }
         .tab-pane { display: none; animation: fadeIn 0.25s ease; }
         .tab-pane.active-pane { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         .dashboard-card { background: var(--card-bg); border-radius: 24px; padding: 18px; text-align: center; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .dashboard-number { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .user-info { position: fixed; top: 18px; right: 20px; z-index: 110; background: var(--card-bg); backdrop-filter: blur(12px); padding: 8px 18px; border-radius: 50px; border: 1px solid var(--border-color); font-weight: 500; }
+        .user-info { position: fixed; top: 18px; right: 20px; z-index: 110; background: var(--card-bg); backdrop-filter: blur(12px); padding: 8px 18px; border-radius: 50px; border: 1px solid var(--border-color); font-weight: 500; display: flex; align-items: center; gap: 10px; }
         .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-primary); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .login-card { background: var(--card-bg); border-radius: 36px; padding: 36px; width: 420px; border: 1px solid var(--border-color); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
         .dark-mode-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 110; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 60px; padding: 8px 18px; cursor: pointer; }
@@ -83,11 +83,12 @@
         .naftal-logo-img { height: 45px; width: auto; border-radius: 8px; }
         .btn-add-logo { background: linear-gradient(135deg, #d4af37, #b8941a); border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2rem; cursor: pointer; transition: all 0.3s; }
         .signature-gold { position: fixed; bottom: 15px; left: 20px; z-index: 110; font-family: 'Amiri', serif; font-size: 0.8rem; color: var(--gold); direction: rtl; font-weight: bold; }
-        .notification-bell { position: relative; cursor: pointer; margin-right: 15px; }
+        .notification-bell { position: relative; cursor: pointer; }
         .notification-badge { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
-        .filter-client-input { background: var(--bg-secondary); border: 2px solid var(--gold); border-radius: 30px; padding: 10px 20px; font-size: 1rem; }
+        .filter-client-input { background: var(--bg-secondary); border: 2px solid var(--gold); border-radius: 30px; padding: 10px 20px; font-size: 1rem; width: 100%; }
         .ligne-attente { background: rgba(139,92,246,0.1) !important; }
         .delai-badge { background: #10b98120; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; display: inline-block; }
+        .btn-client-action { margin: 0 5px; }
         @media (max-width: 768px) {
             .naftal-logo-img { height: 35px; }
             .signature-gold { font-size: 0.6rem; bottom: 10px; left: 10px; }
@@ -95,6 +96,8 @@
             .tab-btn { padding: 6px 12px; font-size: 0.75rem; }
             .table-premium { font-size: 0.65rem; }
             .table-premium td, .table-premium th { padding: 6px; }
+            .user-info { gap: 5px; }
+            .btn-client-action { padding: 4px 8px; font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -118,9 +121,6 @@
             <input type="text" id="clientCodeInput" class="form-control mb-3" placeholder="Code Client (ex: CL001)">
         </div>
         <button class="btn btn-premium w-100" id="loginBtn">Se connecter</button>
-        <div class="text-center mt-3 small text-muted">
-            👑 Admin: admin123 | 📝 User: user123 | 🚛 Transporteur: trans123
-        </div>
     </div>
 </div>
 
@@ -140,6 +140,7 @@
         <i class="fas fa-user-circle"></i> <strong id="userName"></strong>
         <span id="userRoleBadge" class="user-badge ms-1"></span>
         <button class="btn btn-sm btn-outline ms-2 py-0 px-2" onclick="logout()">Déconnexion</button>
+        <button class="btn btn-sm btn-warning-custom py-0 px-2" id="changeMyPasswordBtn" onclick="openChangeMyPassword()" style="display:none;"><i class="fas fa-key"></i> Changer MDP</button>
     </div>
     
     <div class="container-custom">
@@ -149,7 +150,6 @@
             </h1>
         </div>
         
-        <!-- Dashboard Réalisations d'hier -->
         <div class="row mb-4" id="dashboardRow">
             <div class="col-12">
                 <div class="dashboard-card">
@@ -166,7 +166,6 @@
         
         <div class="custom-tabs" id="tabsContainer"></div>
 
-        <!-- Demandes clients en attente -->
         <div id="tabDemandes" class="tab-pane">
             <div class="glass-card">
                 <div class="card-header-premium">
@@ -184,7 +183,6 @@
             </div>
         </div>
 
-        <!-- Enregistrement -->
         <div id="tabRegister" class="tab-pane">
             <div class="row">
                 <div class="col-md-6">
@@ -235,7 +233,6 @@
             </div>
         </div>
 
-        <!-- Commandes du jour -->
         <div id="tabToday" class="tab-pane">
             <div class="glass-card">
                 <div class="card-header-premium">📅 Commandes du jour <input type="date" id="todayFilterDate" class="form-control d-inline-block w-auto ms-2" style="width:150px;"></div>
@@ -243,7 +240,6 @@
             </div>
         </div>
 
-        <!-- Commandes en instance -->
         <div id="tabPending" class="tab-pane">
             <div class="glass-card">
                 <div class="card-header-premium">⏳ Commandes non soldées & Retard</div>
@@ -256,23 +252,24 @@
             <div class="glass-card">
                 <div class="card-header-premium">
                     <i class="fas fa-user"></i> Mon Espace Client
-                    <button class="btn btn-sm btn-warning-custom float-end" onclick="demanderRappel()" id="rappelBtn"><i class="fas fa-bell"></i> Rappel retard</button>
-                    <button class="btn btn-sm btn-success-custom float-end me-2" onclick="showNouvelleCommandeClient()" id="nouvelleCmdBtn"><i class="fas fa-plus"></i> Nouvelle commande</button>
+                    <div class="float-end">
+                        <button class="btn btn-sm btn-warning-custom btn-client-action" onclick="demanderRappel()" id="rappelBtn"><i class="fas fa-bell"></i> 📢 Rappel retard</button>
+                        <button class="btn btn-sm btn-success-custom btn-client-action" onclick="showNouvelleCommandeClient()" id="nouvelleCmdBtn"><i class="fas fa-plus"></i> 📝 Nouvelle commande</button>
+                    </div>
                 </div>
                 <div class="card-body p-3">
                     <div class="mb-3">
                         <label class="form-label fw-bold">🔑 Code client:</label>
-                        <input type="text" id="clientFilterCode" class="form-control filter-client-input" style="font-size:1.1rem;" readonly>
-                        <button class="btn btn-premium mt-2" onclick="filtrerClientData()"><i class="fas fa-search"></i> Afficher mes commandes</button>
+                        <input type="text" id="clientFilterCode" class="form-control filter-client-input" readonly>
+                        <button class="btn btn-premium mt-2 w-100" onclick="filtrerClientData()"><i class="fas fa-search"></i> Afficher mes commandes</button>
                     </div>
-                    <div id="clientDataContainer">
-                        <div class="alert alert-info">Cliquez sur "Afficher mes commandes" pour voir vos commandes</div>
+                    <div id="clientDataContainer" class="mt-3">
+                        <div class="alert alert-info text-center">Cliquez sur "Afficher mes commandes" pour voir vos commandes</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Base clients -->
         <div id="tabClients" class="tab-pane">
             <div class="glass-card">
                 <div class="card-header-premium">👥 Base clients</div>
@@ -283,10 +280,9 @@
             </div>
         </div>
 
-        <!-- Gestion utilisateurs -->
         <div id="tabUsers" class="tab-pane">
             <div class="glass-card">
-                <div class="card-header-premium"><i class="fas fa-users"></i> Gestion des utilisateurs</div>
+                <div class="card-header-premium"><i class="fas fa-users"></i> Gestion des utilisateurs & permissions</div>
                 <div class="card-body p-3">
                     <div class="row mb-4">
                         <div class="col-md-3"><input type="text" id="newUsername" class="form-control" placeholder="Nom"></div>
@@ -296,7 +292,9 @@
                     </div>
                     <div class="table-responsive">
                         <table class="table table-premium">
-                            <thead><tr><th>Nom</th><th>Rôle</th><th>Permissions</th><th>Actions</th></tr></thead>
+                            <thead>
+                                <tr><th>Nom</th><th>Rôle</th><th>Actions</th><th>Permissions</th><th>Admin Actions</th></tr>
+                            </thead>
                             <tbody id="usersTableBody"></tbody>
                         </table>
                     </div>
@@ -304,18 +302,52 @@
             </div>
         </div>
         
-        <!-- Modal détail client -->
-        <div class="modal fade" id="clientDetailModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">Détail des livraisons avec délai</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="clientDetailBody"></div></div></div></div>
+        <!-- Modals -->
+        <div class="modal fade" id="changePasswordModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">🔐 Changer le mot de passe</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+            <input type="hidden" id="passwordUserId">
+            <div class="mb-3"><label>Nouveau mot de passe</label><input type="password" id="newUserPasswordModal" class="form-control"></div>
+            <div class="mb-3"><label>Confirmer</label><input type="password" id="confirmUserPasswordModal" class="form-control"></div>
+            <button class="btn btn-premium w-100" onclick="saveNewPassword()">Enregistrer</button>
+        </div></div></div></div>
         
-        <!-- Modal nouvelle commande client -->
+        <div class="modal fade" id="changeMyPasswordModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">🔐 Changer mon mot de passe</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+            <div class="mb-3"><label>Ancien mot de passe</label><input type="password" id="oldPasswordInput" class="form-control"></div>
+            <div class="mb-3"><label>Nouveau mot de passe</label><input type="password" id="myNewPasswordInput" class="form-control"></div>
+            <div class="mb-3"><label>Confirmer</label><input type="password" id="myConfirmPasswordInput" class="form-control"></div>
+            <button class="btn btn-premium w-100" onclick="saveMyNewPassword()">Enregistrer</button>
+        </div></div></div></div>
+        
+        <div class="modal fade" id="permissionsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">🔐 Gérer les permissions</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+            <input type="hidden" id="permissionsUserId">
+            <div class="mb-3"><label class="fw-bold">Utilisateur: <span id="permissionsUserName"></span></label></div>
+            <hr><h6>📋 Actions</h6>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permAjouterCommande"><label class="form-check-label">➕ Ajouter commande</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permAjouterRealisation"><label class="form-check-label">🚛 Ajouter réalisation</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permValiderDemandes"><label class="form-check-label">✅ Valider demandes</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permAnnulerRealisation"><label class="form-check-label">❌ Annuler réalisation</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirDashboard"><label class="form-check-label">📊 Voir dashboard</label></div>
+            <hr><h6>📑 Onglets visibles</h6>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirDemandes"><label class="form-check-label">📋 Demandes clients</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirRegister"><label class="form-check-label">📝 Enregistrement</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirToday"><label class="form-check-label">📅 Commandes du jour</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirPending"><label class="form-check-label">⏳ En instance & Retard</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirClients"><label class="form-check-label">👥 Base clients</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirUsers"><label class="form-check-label">👥 Gestion utilisateurs</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirClientSpace"><label class="form-check-label">👤 Mon espace client</label></div>
+            <hr><button class="btn btn-premium w-100" onclick="savePermissions()">Enregistrer</button>
+        </div></div></div></div>
+        
+        <div class="modal fade" id="clientDetailModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">Détail des livraisons</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="clientDetailBody"></div></div></div></div>
+        
         <div class="modal fade" id="nouvelleCommandeModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">📝 Nouvelle demande de commande</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
             <form id="clientCommandeForm">
                 <div class="mb-3"><label>Code Client</label><input type="text" id="clientCmdCode" class="form-control" readonly></div>
                 <div class="mb-3"><label>Produit</label><select id="clientCmdProduit" class="form-select"><option>Gasoil</option><option>Sans Plomb</option></select></div>
-                <div class="mb-3"><label>Nombre de citernes</label><input type="number" id="clientCmdNbCiternes" class="form-control" min="1" required></div>
+                <div class="mb-3"><label>Nombre de citernes</label><input type="number" id="clientCmdNbCiternes" class="form-control" min="1" required oninput="document.getElementById('clientCmdQuantite').value = (this.value * 27) + ' m³'"></div>
+                <div class="mb-3"><label>Quantité (m³)</label><input type="text" id="clientCmdQuantite" class="form-control" readonly></div>
                 <div class="mb-3"><label>Destination</label><input type="text" id="clientCmdDestination" class="form-control" required></div>
-                <div class="alert alert-warning small">⚠️ Cette demande sera examinée par nos équipes avant validation.</div>
-                <button type="submit" class="btn btn-premium w-100">Envoyer la demande</button>
+                <div class="alert alert-warning small">⚠️ Cette demande sera examinée par nos équipes.</div>
+                <button type="submit" class="btn btn-premium w-100">📨 Envoyer la demande</button>
             </form>
         </div></div></div></div>
     </div>
@@ -323,7 +355,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ============ FIREBASE CONFIGURATION ============
+    // ============ FIREBASE ============
     const firebaseConfig = {
         apiKey: "AIzaSyDrfuUcrRNvW1xfMW7ZFYUqjZy7Ej3-xcc",
         authDomain: "naftal-gestion.firebaseapp.com",
@@ -333,919 +365,119 @@
         messagingSenderId: "793589485216",
         appId: "1:793589485216:web:c09eed21df0d924966c3c5"
     };
-
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // ============ DONNÉES ==========
-    let clientsDB = [];
-    let usersDB = [];
-    let demandesClient = [];
-    let commandes = [];
-    let realisations = [];
-    let notifications = [];
+    let clientsDB = [], usersDB = [], demandesClient = [], commandes = [], realisations = [], notifications = [];
     let currentUserRole = null, currentUserName = null, currentUserId = null, currentClientCode = null, selectedCommandeIdForReal = null;
     let currentUserPermissions = null;
     let savedLogo = localStorage.getItem('naftalLogo');
     
-    // Permissions par défaut
     const defaultPermissions = {
-        admin: { ajouterCommande: true, ajouterRealisation: true, validerDemandes: true, annulerRealisation: true, voirDashboard: true },
-        user: { ajouterCommande: true, ajouterRealisation: true, validerDemandes: true, annulerRealisation: false, voirDashboard: true },
-        transporteur: { ajouterCommande: false, ajouterRealisation: false, validerDemandes: false, annulerRealisation: false, voirDashboard: true }
+        admin: { ajouterCommande: true, ajouterRealisation: true, validerDemandes: true, annulerRealisation: true, voirDashboard: true, voirDemandes: true, voirRegister: true, voirToday: true, voirPending: true, voirClients: true, voirUsers: true, voirClientSpace: true },
+        user: { ajouterCommande: true, ajouterRealisation: true, validerDemandes: true, annulerRealisation: false, voirDashboard: true, voirDemandes: true, voirRegister: true, voirToday: true, voirPending: true, voirClients: false, voirUsers: false, voirClientSpace: false },
+        transporteur: { ajouterCommande: false, ajouterRealisation: false, validerDemandes: false, annulerRealisation: false, voirDashboard: true, voirDemandes: false, voirRegister: false, voirToday: true, voirPending: true, voirClients: false, voirUsers: false, voirClientSpace: false }
     };
 
-    // ============ INITIALISATION DES DONNÉES FIREBASE ============
     function initFirebaseData() {
-        // Charger les clients
         database.ref('clients').on('value', (snapshot) => {
             const data = snapshot.val();
-            if(data) {
-                clientsDB = Object.entries(data).map(([id, value]) => ({ id, ...value }));
-            } else {
-                // Données par défaut
-                const defaultClients = [
-                    { code: 'CL001', nom: 'SARL Transport' },
-                    { code: 'CL002', nom: 'Entreprise Benali' },
-                    { code: 'CL003', nom: 'Logistique Sud' },
-                    { code: 'E2206', nom: 'ENTP' }
-                ];
-                defaultClients.forEach(client => {
-                    database.ref('clients').push(client);
-                });
-            }
+            if(data) clientsDB = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+            else [{ code: 'CL001', nom: 'SARL Transport' }, { code: 'CL002', nom: 'Entreprise Benali' }, { code: 'CL003', nom: 'Logistique Sud' }, { code: 'E2206', nom: 'ENTP' }].forEach(c => database.ref('clients').push(c));
             renderAll();
         });
-
-        // Charger les utilisateurs
         database.ref('users').on('value', (snapshot) => {
             const data = snapshot.val();
-            if(data) {
-                usersDB = Object.entries(data).map(([id, value]) => ({ id, ...value }));
-            } else {
-                // Utilisateurs par défaut
-                const defaultUsers = [
-                    { username: 'admin', password: 'admin123', role: 'admin', permissions: defaultPermissions.admin },
-                    { username: 'user', password: 'user123', role: 'user', permissions: defaultPermissions.user },
-                    { username: 'transporteur', password: 'trans123', role: 'transporteur', permissions: defaultPermissions.transporteur }
-                ];
-                defaultUsers.forEach(user => {
-                    database.ref('users').push(user);
-                });
-            }
+            if(data) usersDB = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+            else [{ username: 'admin', password: 'admin123', role: 'admin', permissions: defaultPermissions.admin }, { username: 'user', password: 'user123', role: 'user', permissions: defaultPermissions.user }, { username: 'transporteur', password: 'trans123', role: 'transporteur', permissions: defaultPermissions.transporteur }].forEach(u => database.ref('users').push(u));
             renderUsersTable();
         });
-
-        // Charger les demandes clients
-        database.ref('demandesClient').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if(data) {
-                demandesClient = Object.entries(data).map(([id, value]) => ({ id, ...value }));
-            } else {
-                demandesClient = [];
-            }
-            renderAll();
-        });
-
-        // Charger les commandes
-        database.ref('commandes').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if(data) {
-                commandes = Object.entries(data).map(([id, value]) => ({ id, ...value }));
-            } else {
-                commandes = [];
-            }
-            renderAll();
-        });
-
-        // Charger les réalisations
-        database.ref('realisations').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if(data) {
-                realisations = Object.entries(data).map(([id, value]) => ({ id, ...value }));
-            } else {
-                realisations = [];
-            }
-            renderAll();
-        });
-
-        // Charger les notifications
-        database.ref('notifications').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if(data) {
-                notifications = Object.entries(data).map(([id, value]) => ({ id, ...value }));
-            } else {
-                notifications = [];
-            }
-            updateNotificationBell();
-        });
+        database.ref('demandesClient').on('value', (snapshot) => { demandesClient = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]) => ({ id, ...v })) : []; renderAll(); });
+        database.ref('commandes').on('value', (snapshot) => { commandes = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]) => ({ id, ...v })) : []; renderAll(); });
+        database.ref('realisations').on('value', (snapshot) => { realisations = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]) => ({ id, ...v })) : []; renderAll(); });
+        database.ref('notifications').on('value', (snapshot) => { notifications = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]) => ({ id, ...v })) : []; updateNotificationBell(); });
     }
 
-    // ============ FONCTIONS LOGO ==========
-    function loadSavedLogo() {
-        const logoDisplay = document.getElementById('logoDisplay');
-        if(savedLogo && logoDisplay) logoDisplay.innerHTML = `<img src="${savedLogo}" alt="NAFTAL" class="naftal-logo-img">`;
-    }
-    function addLogoManually() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = function(e) {
-            const file = e.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    localStorage.setItem('naftalLogo', event.target.result);
-                    savedLogo = event.target.result;
-                    document.getElementById('logoDisplay').innerHTML = `<img src="${event.target.result}" alt="NAFTAL" class="naftal-logo-img">`;
-                    showToast('✅ Logo ajouté!');
-                };
-                reader.readAsDataURL(file);
-            }
-        };
-        input.click();
-    }
+    function loadSavedLogo() { const d = document.getElementById('logoDisplay'); if(savedLogo && d) d.innerHTML = `<img src="${savedLogo}" class="naftal-logo-img">`; }
+    function addLogoManually() { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = e => { const f = e.target.files[0]; if(f) { const r = new FileReader(); r.onload = ev => { localStorage.setItem('naftalLogo', ev.target.result); savedLogo = ev.target.result; document.getElementById('logoDisplay').innerHTML = `<img src="${ev.target.result}" class="naftal-logo-img">`; showToast('✅ Logo ajouté!'); }; r.readAsDataURL(f); } }; i.click(); }
     
-    // ============ FONCTIONS BASE ==========
-    function getCurrentDateTime() {
-        let now = new Date();
-        let date = now.toLocaleDateString('fr-FR');
-        let heure = now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-        return { date, heure, timestamp: now.getTime() };
-    }
+    function getCurrentDateTime() { const n = new Date(); return { date: n.toLocaleDateString('fr-FR'), heure: n.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }), timestamp: n.getTime() }; }
+    function showToast(m, t='success') { Toastify({ text: m, duration: 2500, gravity: "top", position: "right", style: { background: t==='success' ? '#10b981' : '#ef4444', borderRadius:'14px' } }).showToast(); }
+    function updateNotificationBell() { let c = notifications.filter(n => !n.read && n.targetRole !== 'client').length; let b = document.getElementById('notificationCount'); if(c > 0) { b.innerText = c; b.style.display = 'flex'; } else b.style.display = 'none'; }
+    function addNotification(m, t='info', tr=null) { database.ref('notifications').push({ message: m, type: t, targetRole: tr, read: false, date: new Date().toLocaleString(), timestamp: Date.now() }); showToast(m, t); }
+    function showNotifications() { let l = notifications.filter(n => !n.read && n.targetRole !== 'client'); if(l.length === 0) { showToast('Aucune notification', 'info'); return; } let h = '<div class="list-group">'; l.forEach(n => { h += `<div class="list-group-item"><small>${n.date}</small><br>${n.message}</div>`; database.ref(`notifications/${n.id}`).update({ read: true }); }); h += '</div>'; Swal.fire({ title: 'Notifications', html: h, icon: 'info', confirmButtonColor: '#4f46e5' }); }
     
-    function showToast(msg, type='success') { 
-        Toastify({ text: msg, duration: 2500, gravity: "top", position: "right", style: { background: type==='success' ? '#10b981' : '#ef4444', borderRadius:'14px' } }).showToast(); 
-    }
+    function hasPermission(p) { if(currentUserRole === 'admin') return true; return currentUserPermissions && currentUserPermissions[p] === true; }
+    function calculerDelaiPrecis(ct, rt) { let d = rt - ct; if(d <= 0) return '0s'; let s = Math.floor(d/1000), m = Math.floor(s/60), h = Math.floor(m/60), j = Math.floor(h/24); s %= 60; m %= 60; h %= 24; let parts = []; if(j>0) parts.push(`${j}j`); if(h>0) parts.push(`${h}h`); if(m>0) parts.push(`${m}m`); if(s>0) parts.push(`${s}s`); return parts.join(' ') || '0s'; }
     
-    function updateNotificationBell() {
-        let count = notifications.filter(n => !n.read && n.targetRole !== 'client').length;
-        let bell = document.getElementById('notificationCount');
-        if(count > 0) { bell.innerText = count; bell.style.display = 'flex'; }
-        else bell.style.display = 'none';
-    }
+    async function checkPendingAndConfirm(cc) { let p = commandes.filter(c => c.codeClient === cc && getRealiseByCommande(c.id) < c.quantite); if(p.length === 0) return 'add'; const r = await Swal.fire({ title: '⚠️ Commande en instance', text: `Ce client a ${p.length} commande(s) non soldée(s). Que faire ?`, icon: 'question', showCancelButton: true, confirmButtonText: '🗑️ Supprimer ancienne + Nouvelle', cancelButtonText: '📦 Garder + Ajouter nouvelle' }); if(r.isConfirmed) { for(let o of p) { database.ref(`commandes/${o.id}`).remove(); realisations.filter(rr => rr.commandeId === o.id).forEach(rr => database.ref(`realisations/${rr.id}`).remove()); } addNotification(`🗑️ Anciennes commandes de ${cc} supprimées`, 'warning', 'admin'); return 'add'; } return 'add'; }
     
-    function addNotification(message, type='info', targetRole=null) {
-        const newNotif = { message, type, targetRole, read: false, date: new Date().toLocaleString(), timestamp: Date.now() };
-        database.ref('notifications').push(newNotif);
-        showToast(message, type);
-    }
+    function updateYesterdayDashboard() { let y = new Date(); y.setDate(y.getDate()-1); let ys = y.toLocaleDateString('fr-FR'); document.getElementById('yesterdayDate').innerText = ys; let yc = commandes.filter(c => c.date === ys); let yh = ''; if(yc.length === 0) yh = '<tr><td colspan="6" class="text-center">Aucune commande pour cette date</td></tr>'; else yc.forEach(cmd => { let r = getRealiseByCommande(cmd.id); let p = (r/cmd.quantite)*100; yh += `<tr><td><strong>${cmd.client}</strong></td><td>${cmd.codeClient}</td><td>${cmd.produit}</td><td>${cmd.quantite} m³</td><td class="text-success fw-bold">${r} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td></tr>`; }); document.getElementById('yesterdayTableBody').innerHTML = yh; }
     
-    function showNotifications() {
-        let notifList = notifications.filter(n => !n.read && n.targetRole !== 'client');
-        if(notifList.length === 0) { showToast('Aucune notification', 'info'); return; }
-        let html = '<div class="list-group">';
-        notifList.forEach(n => { html += `<div class="list-group-item"><small>${n.date}</small><br>${n.message}</div>`; 
-            database.ref(`notifications/${n.id}`).update({ read: true });
-        });
-        html += '</div>';
-        Swal.fire({ title: 'Notifications', html: html, icon: 'info', confirmButtonColor: '#4f46e5' });
-    }
+    function getClientNameByCode(code) { let c = clientsDB.find(c => c.code === code); return c ? c.nom : ''; }
+    function updateClientSelect() { let l = document.getElementById('clientsCodeList'); if(l) l.innerHTML = clientsDB.map(c => `<option value="${c.code}">${c.code} - ${c.nom}</option>`).join(''); }
+    document.getElementById('cmdCodeClient')?.addEventListener('input', function() { document.getElementById('cmdClient').value = getClientNameByCode(this.value) || ''; });
+    document.getElementById('clientCmdNbCiternes')?.addEventListener('input', function() { document.getElementById('clientCmdQuantite').value = (parseInt(this.value)||0) * 27 + ' m³'; });
     
-    // ============ PERMISSIONS ==========
-    function hasPermission(permission) {
-        if(currentUserRole === 'admin') return true;
-        return currentUserPermissions && currentUserPermissions[permission] === true;
-    }
+    function addClient() { if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error'); let c = document.getElementById('newClientCode').value.trim(), n = document.getElementById('newClientName').value.trim(); if(!c||!n) return showToast('Champs requis','error'); if(clientsDB.find(cx => cx.code === c)) return showToast('Code existe','error'); database.ref('clients').push({ code: c, nom: n }); showToast('Client ajouté'); document.getElementById('newClientCode').value = ''; document.getElementById('newClientName').value = ''; }
+    function deleteClient(id, code) { if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error'); if(commandes.some(c => c.codeClient === code)) return showToast('Ce client a des commandes','error'); database.ref(`clients/${id}`).remove(); showToast('Client supprimé'); }
+    function renderClientsTable() { let h = ''; clientsDB.forEach(c => { h += `<tr><td><strong>${c.code}</strong></td><td>${c.nom}</td><td>${currentUserRole === 'admin' ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteClient('${c.id}', '${c.code}')"><i class="fas fa-trash"></i> Supprimer</button>` : '—'}</td></tr>`; }); if(document.getElementById('clientsTableBody')) document.getElementById('clientsTableBody').innerHTML = h; }
     
-    // ============ CALCUL DÉLAI ==========
-    function calculerDelaiPrecis(cmdTimestamp, realTimestamp) {
-        let diffMs = realTimestamp - cmdTimestamp;
-        if(diffMs <= 0) return '0s';
-        let seconds = Math.floor(diffMs/1000);
-        let minutes = Math.floor(seconds/60);
-        let hours = Math.floor(minutes/60);
-        let days = Math.floor(hours/24);
-        seconds %= 60;
-        minutes %= 60;
-        hours %= 24;
-        let parts = [];
-        if(days>0) parts.push(`${days}j`);
-        if(hours>0) parts.push(`${hours}h`);
-        if(minutes>0) parts.push(`${minutes}m`);
-        if(seconds>0) parts.push(`${seconds}s`);
-        return parts.join(' ') || '0s';
-    }
+    function demanderRappel() { let cc = currentClientCode; if(!cc) { showToast('Code client non trouvé', 'error'); return; } let ccmd = commandes.find(c => c.codeClient === cc && getRealiseByCommande(c.id) < c.quantite); if(!ccmd) { showToast('📭 Aucune commande en retard', 'info'); return; } addNotification(`📢 Client ${cc} (${getClientNameByCode(cc)}) demande un rappel pour commande non soldée`, 'warning', 'admin'); addNotification(`📢 Client ${cc} demande un rappel`, 'warning', 'user'); showToast('✅ Rappel envoyé'); }
+    function showNouvelleCommandeClient() { let cc = currentClientCode; if(!cc) { showToast('Code client non trouvé', 'error'); return; } document.getElementById('clientCmdCode').value = cc; document.getElementById('clientCmdQuantite').value = ''; document.getElementById('clientCmdNbCiternes').value = ''; document.getElementById('clientCmdDestination').value = ''; new bootstrap.Modal(document.getElementById('nouvelleCommandeModal')).show(); }
+    document.getElementById('clientCommandeForm')?.addEventListener('submit', function(e) { e.preventDefault(); let cc = document.getElementById('clientCmdCode').value, cn = getClientNameByCode(cc), nb = parseInt(document.getElementById('clientCmdNbCiternes').value), now = getCurrentDateTime(); if(!nb || nb <= 0) return showToast('Nombre de citernes invalide', 'error'); database.ref('demandesClient').push({ date: now.date, heure: now.heure, timestamp: now.timestamp, codeClient: cc, client: cn, produit: document.getElementById('clientCmdProduit').value, nbCiternes: nb, quantite: nb*27, destination: document.getElementById('clientCmdDestination').value, createdBy: cn, status: 'en_attente' }); addNotification(`🆕 Demande commande de ${cn} (${cc}) - ${nb*27} m³ en attente`, 'success', 'admin'); addNotification(`🆕 Commande de ${cn} à valider`, 'success', 'user'); showToast('✅ Demande envoyée'); bootstrap.Modal.getInstance(document.getElementById('nouvelleCommandeModal')).hide(); renderAll(); });
     
-    // ============ CONFIRMATION POUR COMMANDE EN INSTANCE ==========
-    async function checkPendingAndConfirm(clientCode) {
-        let pending = commandes.filter(c => c.codeClient === clientCode && getRealiseByCommande(c.id) < c.quantite);
-        if(pending.length === 0) return 'add';
-        
-        const result = await Swal.fire({
-            title: '⚠️ Commande en instance',
-            text: `Ce client a ${pending.length} commande(s) non soldée(s). Que faire ?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: '🗑️ Supprimer ancienne + Nouvelle',
-            cancelButtonText: '📦 Garder + Ajouter nouvelle',
-            cancelButtonColor: '#f59e0b'
-        });
-        
-        if(result.isConfirmed) {
-            for(let p of pending) {
-                database.ref(`commandes/${p.id}`).remove();
-                const realisationsToDelete = realisations.filter(r => r.commandeId === p.id);
-                for(let r of realisationsToDelete) {
-                    database.ref(`realisations/${r.id}`).remove();
-                }
-            }
-            addNotification(`🗑️ Anciennes commandes de ${clientCode} supprimées`, 'warning', 'admin');
-            return 'add';
-        } else {
-            return 'add';
-        }
-    }
+    function filtrerClientData() { let cc = currentClientCode; if(!cc) return; document.getElementById('clientFilterCode').value = cc; let ccms = commandes.filter(c => c.codeClient === cc); if(ccms.length === 0) { document.getElementById('clientDataContainer').innerHTML = '<div class="alert alert-info text-center">📭 Aucune commande trouvée</div>'; return; } let h = ''; ccms.forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100, s = rt<=0 ? '<span class="badge-soldee">✅ Soldée</span>' : (isCommandeRetardee(cmd) ? '<span class="badge-retard">⚠️ En retard</span>' : '<span class="badge-non-soldee">⏳ Non soldée</span>'); let dels = getRealisationsByCommande(cmd.id); let dl = dels.length > 0 ? dels.map(d => `<div>🚛 FR:${d.fr} | Chauffeur:${d.chauffeur} | ${d.quantite}m³ | ${d.date} ${d.heure}</div>`).join('') : '<div class="text-muted">📭 Aucune livraison</div>'; h += `<div class="card mb-3 p-3"><div class="d-flex justify-content-between"><strong>📅 ${cmd.date} à ${cmd.heure}</strong> ${s}</div><div>⛽ ${cmd.produit} | 🚛 ${cmd.nbCiternes} citernes | 📦 ${cmd.quantite} m³</div><div class="progress-custom my-2"><div class="progress-fill" style="width:${p}%"></div></div><div>✅ Réalisé: ${r} m³ | ⚠️ Restant: ${rt} m³</div><div class="mt-2"><strong>📋 Livraisons:</strong><br>${dl}</div><div class="mt-1 small text-muted">📝 Validé par: ${cmd.validePar || 'admin'} le ${cmd.valideLe || cmd.date}</div></div>`; }); document.getElementById('clientDataContainer').innerHTML = h; }
     
-    // ============ DASHBOARD HIER ==========
-    function updateYesterdayDashboard() {
-        let yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        let yesterdayStr = yesterday.toLocaleDateString('fr-FR');
-        document.getElementById('yesterdayDate').innerText = yesterdayStr;
-        
-        let yesterdayCommandes = commandes.filter(c => c.date === yesterdayStr);
-        let yesterdayHtml = '';
-        
-        if(yesterdayCommandes.length === 0) {
-            yesterdayHtml = '</table><td colspan="6" class="text-center">Aucune commande pour cette date</td></tr>';
-        } else {
-            yesterdayCommandes.forEach(cmd => {
-                let realise = getRealiseByCommande(cmd.id);
-                let percent = (realise/cmd.quantite)*100;
-                yesterdayHtml += `<tr>
-                    <td><strong>${cmd.client}</strong></td>
-                    <td>${cmd.codeClient}</td>
-                    <td>${cmd.produit}</td>
-                    <td>${cmd.quantite} m³</td>
-                    <td class="text-success fw-bold">${realise} m³</td>
-                    <td><div class="progress-custom"><div class="progress-fill" style="width:${percent}%"></div></div><small>${Math.round(percent)}%</small></td>
-                </tr>`;
-            });
-        }
-        document.getElementById('yesterdayTableBody').innerHTML = yesterdayHtml;
-    }
+    function validerDemande(id) { if(!hasPermission('validerDemandes')) return showToast('Permission refusée', 'error'); let d = demandesClient.find(d => d.id === id); if(!d) return; Swal.fire({ title: '✅ Valider', text: `Valider la commande de ${d.client} ?`, icon: 'question', showCancelButton: true, confirmButtonText: 'Oui', cancelButtonText: 'Non' }).then(res => { if(res.isConfirmed) { let now = getCurrentDateTime(); database.ref('commandes').push({ date: now.date, heure: now.heure, timestamp: now.timestamp, codeClient: d.codeClient, client: d.client, produit: d.produit, nbCiternes: d.nbCiternes, quantite: d.quantite, destination: d.destination, createdBy: `${d.createdBy} → ${currentUserName}`, validePar: currentUserName, valideLe: new Date().toLocaleString() }); database.ref(`demandesClient/${id}`).remove(); addNotification(`✅ Commande ${d.client} validée par ${currentUserName}`, 'success', 'admin'); addNotification(`✅ Commande ${d.client} validée`, 'success', 'user'); showToast('Demande validée'); renderAll(); } }); }
+    function refuserDemande(id) { if(!hasPermission('validerDemandes')) return showToast('Permission refusée', 'error'); let d = demandesClient.find(d => d.id === id); if(!d) return; Swal.fire({ title: '❌ Refuser', text: `Refuser la commande de ${d.client} ?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Oui', cancelButtonColor: '#ef4444' }).then(res => { if(res.isConfirmed) { database.ref(`demandesClient/${id}`).remove(); addNotification(`❌ Commande ${d.client} refusée`, 'error', 'admin'); showToast('Demande refusée'); renderAll(); } }); }
     
-    // ============ GESTION CLIENTS ==========
-    function getClientNameByCode(code) { 
-        let c = clientsDB.find(c => c.code === code); 
-        return c ? c.nom : ''; 
-    }
+    function addUser() { if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error'); let u = document.getElementById('newUsername').value.trim(), p = document.getElementById('newUserPassword').value, r = document.getElementById('newUserRole').value; if(!u||!p) return showToast('Nom et mot de passe requis','error'); if(usersDB.find(x => x.username === u)) return showToast('Nom existe','error'); let perms = r === 'user' ? {...defaultPermissions.user} : {...defaultPermissions.transporteur}; database.ref('users').push({ username: u, password: p, role: r, permissions: perms }); showToast(`Utilisateur ${u} ajouté`); document.getElementById('newUsername').value = ''; document.getElementById('newUserPassword').value = ''; }
+    function deleteUser(id, un) { if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error'); if(un === 'admin') return showToast('Impossible', 'error'); database.ref(`users/${id}`).remove(); showToast('Utilisateur supprimé'); }
+    function openChangePassword(id, un) { document.getElementById('passwordUserId').value = id; document.getElementById('newUserPasswordModal').value = ''; document.getElementById('confirmUserPasswordModal').value = ''; new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); }
+    function saveNewPassword() { let id = document.getElementById('passwordUserId').value, np = document.getElementById('newUserPasswordModal').value.trim(), cp = document.getElementById('confirmUserPasswordModal').value.trim(); if(!np) return showToast('Mot de passe requis','error'); if(np !== cp) return showToast('Les mots de passe ne correspondent pas','error'); database.ref(`users/${id}`).update({ password: np }); showToast('Mot de passe mis à jour'); bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide(); }
+    function openChangeMyPassword() { document.getElementById('oldPasswordInput').value = ''; document.getElementById('myNewPasswordInput').value = ''; document.getElementById('myConfirmPasswordInput').value = ''; new bootstrap.Modal(document.getElementById('changeMyPasswordModal')).show(); }
+    function saveMyNewPassword() { let old = document.getElementById('oldPasswordInput').value.trim(), np = document.getElementById('myNewPasswordInput').value.trim(), cp = document.getElementById('myConfirmPasswordInput').value.trim(); if(!old) return showToast('Ancien mot de passe requis','error'); if(!np) return showToast('Nouveau mot de passe requis','error'); if(np !== cp) return showToast('Les mots de passe ne correspondent pas','error'); let u = usersDB.find(u => u.id === currentUserId); if(!u || u.password !== old) return showToast('Ancien mot de passe incorrect','error'); database.ref(`users/${currentUserId}`).update({ password: np }); showToast('Mot de passe mis à jour'); bootstrap.Modal.getInstance(document.getElementById('changeMyPasswordModal')).hide(); }
     
-    function updateClientSelect() { 
-        let list = document.getElementById('clientsCodeList'); 
-        if(list) list.innerHTML = clientsDB.map(c => `<option value="${c.code}">${c.code} - ${c.nom}</option>`).join(''); 
-    }
+    function openPermissionsModal(uid, un, perms) { document.getElementById('permissionsUserId').value = uid; document.getElementById('permissionsUserName').innerText = un; document.getElementById('permAjouterCommande').checked = perms.ajouterCommande||false; document.getElementById('permAjouterRealisation').checked = perms.ajouterRealisation||false; document.getElementById('permValiderDemandes').checked = perms.validerDemandes||false; document.getElementById('permAnnulerRealisation').checked = perms.annulerRealisation||false; document.getElementById('permVoirDashboard').checked = perms.voirDashboard||false; document.getElementById('permVoirDemandes').checked = perms.voirDemandes||false; document.getElementById('permVoirRegister').checked = perms.voirRegister||false; document.getElementById('permVoirToday').checked = perms.voirToday||false; document.getElementById('permVoirPending').checked = perms.voirPending||false; document.getElementById('permVoirClients').checked = perms.voirClients||false; document.getElementById('permVoirUsers').checked = perms.voirUsers||false; document.getElementById('permVoirClientSpace').checked = perms.voirClientSpace||false; new bootstrap.Modal(document.getElementById('permissionsModal')).show(); }
+    function savePermissions() { let uid = document.getElementById('permissionsUserId').value; let np = { ajouterCommande: document.getElementById('permAjouterCommande').checked, ajouterRealisation: document.getElementById('permAjouterRealisation').checked, validerDemandes: document.getElementById('permValiderDemandes').checked, annulerRealisation: document.getElementById('permAnnulerRealisation').checked, voirDashboard: document.getElementById('permVoirDashboard').checked, voirDemandes: document.getElementById('permVoirDemandes').checked, voirRegister: document.getElementById('permVoirRegister').checked, voirToday: document.getElementById('permVoirToday').checked, voirPending: document.getElementById('permVoirPending').checked, voirClients: document.getElementById('permVoirClients').checked, voirUsers: document.getElementById('permVoirUsers').checked, voirClientSpace: document.getElementById('permVoirClientSpace').checked }; database.ref(`users/${uid}`).update({ permissions: np }); showToast('Permissions mises à jour'); bootstrap.Modal.getInstance(document.getElementById('permissionsModal')).hide(); }
     
-    document.getElementById('cmdCodeClient')?.addEventListener('input', function() {
-        let code = this.value;
-        document.getElementById('cmdClient').value = getClientNameByCode(code) || '';
-    });
+    function renderUsersTable() { let h = ''; usersDB.forEach(u => { let rc = u.role === 'admin' ? 'badge-admin' : (u.role === 'user' ? 'badge-user' : 'badge-transporteur'), rn = u.role === 'admin' ? '👑 Admin' : (u.role === 'user' ? '📝 Utilisateur' : '🚛 Transporteur'); let perms = u.permissions || (u.role === 'admin' ? defaultPermissions.admin : (u.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur)); let pb = ''; if(perms.ajouterCommande) pb += '<span class="badge bg-success me-1">+Cmd</span>'; if(perms.ajouterRealisation) pb += '<span class="badge bg-success me-1">+Real</span>'; if(perms.validerDemandes) pb += '<span class="badge bg-warning me-1">Valider</span>'; if(perms.annulerRealisation) pb += '<span class="badge bg-danger me-1">Annuler</span>'; let ob = ''; if(perms.voirDemandes) ob += '<span class="badge bg-info me-1">Demandes</span>'; if(perms.voirRegister) ob += '<span class="badge bg-info me-1">Enreg.</span>'; if(perms.voirToday) ob += '<span class="badge bg-info me-1">Today</span>'; if(perms.voirPending) ob += '<span class="badge bg-info me-1">Pending</span>'; if(perms.voirClients) ob += '<span class="badge bg-info me-1">Clients</span>'; if(perms.voirUsers) ob += '<span class="badge bg-info me-1">Users</span>'; if(perms.voirClientSpace) ob += '<span class="badge bg-info me-1">Client</span>'; h += `<tr><td><strong>${u.username}</strong></td><td><span class="user-badge ${rc}">${rn}</span></td><td><button class="btn btn-sm btn-info-custom me-1" onclick="openChangePassword('${u.id}', '${u.username}')"><i class="fas fa-key"></i> MDP</button>${u.username !== 'admin' && currentUserRole === 'admin' ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteUser('${u.id}', '${u.username}')"><i class="fas fa-trash"></i> Suppr</button>` : ''}</td><td>${pb}<br><small>${ob||'Aucun'}</small></td><td><button class="btn btn-sm btn-warning-custom" onclick="openPermissionsModal('${u.id}', '${u.username}', ${JSON.stringify(perms).replace(/"/g, '&quot;')})"><i class="fas fa-edit"></i> Permissions</button></td></tr>`; }); document.getElementById('usersTableBody').innerHTML = h; }
     
-    function addClient() { 
-        if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error');
-        let code = document.getElementById('newClientCode').value.trim(); 
-        let nom = document.getElementById('newClientName').value.trim(); 
-        if(!code||!nom) return showToast('Champs requis','error'); 
-        if(clientsDB.find(c => c.code === code)) return showToast('Code existe','error'); 
-        database.ref('clients').push({ code, nom });
-        showToast('Client ajouté'); 
-        document.getElementById('newClientCode').value = ''; 
-        document.getElementById('newClientName').value = ''; 
-    }
+    function getRealiseByCommande(cmdId) { return realisations.filter(r => r.commandeId === cmdId).reduce((s,r) => s + r.quantite, 0); }
+    function getRealisationsByCommande(cmdId) { return realisations.filter(r => r.commandeId === cmdId); }
+    function isCommandeRetardee(cmd) { let cd = new Date(cmd.timestamp), td = new Date(); td.setHours(0,0,0,0); let r = getRealiseByCommande(cmd.id); return (cd < td && r < cmd.quantite); }
+    function deleteRealisation(rid) { if(!hasPermission('annulerRealisation')) return showToast('Permission refusée', 'error'); Swal.fire({ title: 'Confirmation', text: 'Annuler cette réalisation?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Oui' }).then(res => { if(res.isConfirmed) { database.ref(`realisations/${rid}`).remove(); showToast('Réalisation annulée'); } }); }
+    function deleteCommande(cid) { if(currentUserRole !== 'admin') return showToast('Seul admin peut supprimer','error'); Swal.fire({ title: 'Confirmation', text: 'Supprimer cette commande?', icon: 'warning', showCancelButton: true }).then(res => { if(res.isConfirmed) { database.ref(`commandes/${cid}`).remove(); realisations.filter(r => r.commandeId === cid).forEach(r => database.ref(`realisations/${r.id}`).remove()); showToast('Commande supprimée'); } }); }
+    function renderCommandesListForRealisation() { let f = document.getElementById('filterCommandesList')?.value.toLowerCase() || ''; let ns = commandes.filter(c => getRealiseByCommande(c.id) < c.quantite); let fd = ns.filter(c => c.client.toLowerCase().includes(f) || c.codeClient.toLowerCase().includes(f)); let ctr = document.getElementById('commandesListContainer'); if(!ctr) return; ctr.innerHTML = ''; fd.forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100; let cd = document.createElement('div'); cd.style.cssText = 'background:var(--bg-secondary);border-radius:16px;padding:12px;margin-bottom:10px;cursor:pointer;border:2px solid var(--border-color)'; if(selectedCommandeIdForReal === cmd.id) cd.style.borderColor = '#dc2626'; cd.onclick = () => { document.querySelectorAll('.commande-card').forEach(c=>c.style.borderColor = 'var(--border-color)'); cd.style.borderColor = '#dc2626'; selectedCommandeIdForReal = cmd.id; document.getElementById('realCmdId').value = cmd.id; let dd = document.getElementById('selectedCommandeDetail'); dd.style.display = 'block'; dd.innerHTML = `<strong>Client:</strong> ${cmd.client} (${cmd.codeClient})<br><strong>Restant:</strong> ${rt} m³ / ${cmd.quantite} m³<div class="progress-custom mt-2"><div class="progress-fill" style="width:${p}%"></div></div>`; showToast(`Commande sélectionnée: ${cmd.client}`); }; cd.className = 'commande-card'; cd.innerHTML = `<div><strong>${cmd.client}</strong> <small>${cmd.codeClient}</small></div><div>📦 ${cmd.quantite} m³ | ✅ ${r} m³ | ⚠️ ${rt} m³</div><div class="progress-custom mt-1"><div class="progress-fill" style="width:${p}%"></div></div><small>📍 ${cmd.destination} - ${cmd.date} ${cmd.heure}</small>`; ctr.appendChild(cd); }); if(fd.length===0) ctr.innerHTML='<div class="text-center p-3">Aucune commande en instance</div>'; }
+    function afficherDetailClient(cn, cc) { let rc = realisations.filter(r => { let c = commandes.find(c => c.id === r.commandeId); return c && c.client === cn; }); let h = `<h6>Client: ${cn} (${cc})</h6><table class="table table-sm"><thead><tr><th>FR</th><th>Chauffeur</th><th>Qté</th><th>Date réalisation</th><th>Heure</th><th>Délai</th><th>Par</th></td></thead><tbody>`; rc.forEach(r => { let c = commandes.find(c => c.id === r.commandeId); let d = c ? calculerDelaiPrecis(c.timestamp, r.timestamp) : '-'; h += `<tr><td><strong>${r.fr}</strong></td><td>${r.chauffeur}</td><td>${r.quantite} m³</td><td>${r.date}</td><td>${r.heure}</td><td><span class="delai-badge">⏱️ ${d}</span></td><td>${r.createdBy || '?'}</td></tr>`; }); h += `</tbody></table>`; document.getElementById('clientDetailBody').innerHTML = h; new bootstrap.Modal(document.getElementById('clientDetailModal')).show(); }
     
-    function deleteClient(clientId, code) { 
-        if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error');
-        if(commandes.some(c => c.codeClient === code)) return showToast('Ce client a des commandes','error'); 
-        database.ref(`clients/${clientId}`).remove();
-        showToast('Client supprimé'); 
-    }
+    function renderTabs() { let tabs = []; if(currentUserRole === 'client') { if(hasPermission('voirClientSpace')) tabs.push({id:'client', name:'👤 Mon espace'}); } else if(currentUserRole === 'transporteur') { if(hasPermission('voirToday')) tabs.push({id:'today', name:'📅 Commandes du jour'}); if(hasPermission('voirPending')) tabs.push({id:'pending', name:'⏳ En instance & Retard'}); } else { if(hasPermission('voirDemandes')) tabs.push({id:'demandes', name:'📋 Demandes clients'}); if(hasPermission('voirRegister')) tabs.push({id:'register', name:'📝 Enregistrement'}); if(hasPermission('voirToday')) tabs.push({id:'today', name:'📅 Commandes du jour'}); if(hasPermission('voirPending')) tabs.push({id:'pending', name:'⏳ En instance & Retard'}); if(currentUserRole === 'admin') { if(hasPermission('voirClients')) tabs.push({id:'clients', name:'👥 Base clients'}); if(hasPermission('voirUsers')) tabs.push({id:'users', name:'👥 Gestion utilisateurs'}); } } let html = tabs.map((t,i)=>`<div class="tab-btn ${i===0?'active':''}" data-tab="${t.id}">${t.name}</div>`).join(''); document.getElementById('tabsContainer').innerHTML = html; document.querySelectorAll('.tab-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active-pane')); const id = btn.dataset.tab; if(id==='demandes') document.getElementById('tabDemandes').classList.add('active-pane'); else if(id==='register') document.getElementById('tabRegister').classList.add('active-pane'); else if(id==='today') document.getElementById('tabToday').classList.add('active-pane'); else if(id==='pending') document.getElementById('tabPending').classList.add('active-pane'); else if(id==='client') document.getElementById('tabClient').classList.add('active-pane'); else if(id==='clients') document.getElementById('tabClients').classList.add('active-pane'); else if(id==='users') document.getElementById('tabUsers').classList.add('active-pane'); }); }); if(currentUserRole === 'client') { if(hasPermission('voirClientSpace')) document.getElementById('tabClient').classList.add('active-pane'); } else if(currentUserRole === 'transporteur') { if(hasPermission('voirToday')) document.getElementById('tabToday').classList.add('active-pane'); else if(hasPermission('voirPending')) document.getElementById('tabPending').classList.add('active-pane'); } else { if(hasPermission('voirDemandes')) document.getElementById('tabDemandes').classList.add('active-pane'); else if(hasPermission('voirRegister')) document.getElementById('tabRegister').classList.add('active-pane'); else if(hasPermission('voirToday')) document.getElementById('tabToday').classList.add('active-pane'); else if(hasPermission('voirPending')) document.getElementById('tabPending').classList.add('active-pane'); else if(hasPermission('voirClients')) document.getElementById('tabClients').classList.add('active-pane'); else if(hasPermission('voirUsers')) document.getElementById('tabUsers').classList.add('active-pane'); else document.getElementById('tabToday').classList.add('active-pane'); } }
     
-    function renderClientsTable() { 
-        let html = ''; 
-        clientsDB.forEach(c => { 
-            html += `<tr>
-                <td><strong>${c.code}</strong></td>
-                <td>${c.nom}</td>
-                <td>${currentUserRole === 'admin' ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteClient('${c.id}', '${c.code}')"><i class="fas fa-trash"></i> Supprimer</button>` : '—'}</td>
-            </tr>`; 
-        }); 
-        if(document.getElementById('clientsTableBody')) document.getElementById('clientsTableBody').innerHTML = html; 
-    }
+    function renderAll() { if(!clientsDB.length) return; updateYesterdayDashboard(); updateClientSelect(); renderClientsTable(); renderUsersTable(); if(hasPermission('voirDashboard')) document.getElementById('dashboardRow').style.display = 'flex'; else document.getElementById('dashboardRow').style.display = 'none'; if(hasPermission('ajouterRealisation')) renderCommandesListForRealisation(); if(hasPermission('voirDemandes')) { let dh = '', dc = demandesClient.length; document.getElementById('demandesCount').innerText = dc; demandesClient.forEach(d => { dh += `<tr class="ligne-attente"><td>${d.date}</td><td>${d.heure}</td><td><strong>${d.client}</strong></td><td>${d.codeClient}</td><td>${d.produit}</td><td>${d.nbCiternes}</td><td>${d.quantite} m³</td><td>${d.destination}</td><td><span class="badge-attente">${d.createdBy}</span></td><td><button class="btn btn-sm btn-success-custom me-1" onclick="validerDemande('${d.id}')"><i class="fas fa-check"></i> Valider</button><button class="btn btn-sm btn-danger-custom" onclick="refuserDemande('${d.id}')"><i class="fas fa-times"></i> Refuser</button></td></tr>`; }); document.getElementById('demandesTableBody').innerHTML = dh || '<tr><td colspan="10" class="text-center">Aucune demande en attente\n\n</td></tr>'; } if(currentUserRole !== 'client') { let tf = document.getElementById('todayFilterDate')?.value || new Date().toLocaleDateString('fr-FR'), th = ''; commandes.filter(c => c.date === tf).forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100, s = rt<=0 ? '<span class="badge-soldee">Soldée</span>' : '<span class="badge-non-soldee">Non soldée</span>'; let dels = getRealisationsByCommande(cmd.id), dl = dels.length > 0 ? dels.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure}</div>`).join('') : '<div>Aucune livraison</div>'; let acts = ''; if(currentUserRole === 'admin') acts = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`; acts += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`; th += `<tr><td>${cmd.heure||'--:--'}</td><td><strong>${cmd.client}</strong></td><td>${cmd.codeClient}</td><td>${cmd.produit}</td><td>${cmd.quantite} m³</td><td>${r} m³</td><td class="text-warning fw-bold">${rt} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td><td>${s}</td><td>${dl}</td><td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td><td>${acts}</td></tr>`; }); document.getElementById('todayTableBody').innerHTML = th || '<tr><td colspan="12" class="text-center">Aucune commande aujourd\'hui\n\n</td></tr>'; if(hasPermission('voirPending')) { let ph = ''; commandes.filter(c => getRealiseByCommande(c.id) < c.quantite).forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100, ir = isCommandeRetardee(cmd), s = ir ? '<span class="badge-retard">⚠️ En retard</span>' : '<span class="badge-non-soldee">Non soldée</span>', rc = ir ? 'ligne-retard' : ''; let dels = getRealisationsByCommande(cmd.id), dl = dels.length > 0 ? dels.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure} ${hasPermission('annulerRealisation') ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteRealisation('${d.id}')"><i class="fas fa-times"></i> Annuler</button>` : ''}</div>`).join('') : '<div>Aucune livraison</div>'; let acts = ''; if(currentUserRole === 'admin') acts = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`; acts += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`; ph += `<tr class="${rc}"><td>${cmd.date}</td><td>${cmd.heure||'--:--'}</td><td><strong>${cmd.client}</strong></td><td>${cmd.codeClient}</td><td>${cmd.produit}</td><td>${cmd.quantite} m³</td><td>${r} m³</td><td class="text-warning fw-bold">${rt} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td><td>${s}</td><td>${dl}</td><td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td><td>${acts}</td></tr>`; }); document.getElementById('pendingTableBody').innerHTML = ph || '<tr><td colspan="13" class="text-center">Aucune commande en instance\n\n</td></tr>'; } } else { if(document.getElementById('clientFilterCode')) { document.getElementById('clientFilterCode').value = currentClientCode || ''; filtrerClientData(); } } renderTabs(); }
     
-    // ============ CLIENT - FONCTIONS ==========
-    function demanderRappel() {
-        let codeClient = currentClientCode;
-        if(!codeClient) { showToast('Code client non trouvé', 'error'); return; }
-        let clientCmd = commandes.find(c => c.codeClient === codeClient && getRealiseByCommande(c.id) < c.quantite);
-        if(!clientCmd) { showToast('Aucune commande en retard pour ce client', 'info'); return; }
-        addNotification(`📢 Client ${codeClient} demande un rappel pour sa commande non soldée`, 'warning', 'admin');
-        addNotification(`📢 Client ${codeClient} demande un rappel`, 'warning', 'user');
-        showToast('✅ Rappel envoyé aux équipes');
-    }
+    function login() { const r = document.getElementById('userSelect').value, p = document.getElementById('passwordInput').value; if(r === 'client') { let cc = document.getElementById('clientCodeInput').value.trim(); if(!cc) { Swal.fire('Erreur', 'Entrez votre code client', 'error'); return; } let ce = clientsDB.find(c => c.code === cc); if(!ce) { Swal.fire('Erreur', 'Code client invalide', 'error'); return; } currentClientCode = cc; currentUserRole = 'client'; currentUserName = ce.nom; currentUserId = null; currentUserPermissions = defaultPermissions.transporteur; currentUserPermissions.voirClientSpace = true; } else { let u = usersDB.find(u => u.username === r && u.password === p); if(!u) { Swal.fire('Erreur', 'Nom d\'utilisateur ou mot de passe incorrect', 'error'); return; } currentUserRole = u.role; currentUserName = u.username; currentUserId = u.id; currentClientCode = null; currentUserPermissions = u.permissions || (u.role === 'admin' ? defaultPermissions.admin : (u.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur)); } document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('mainApp').style.display = 'block'; let rt = currentUserRole === 'admin' ? '👑 Admin' : (currentUserRole === 'user' ? '📝 Utilisateur' : (currentUserRole === 'transporteur' ? '🚛 Transporteur' : '👥 Client')); document.getElementById('userName').innerHTML = currentUserName; let rb = document.getElementById('userRoleBadge'); rb.innerHTML = rt; rb.className = `user-badge ${currentUserRole === 'admin' ? 'badge-admin' : (currentUserRole === 'user' ? 'badge-user' : (currentUserRole === 'transporteur' ? 'badge-transporteur' : 'badge-client'))}`; let cmb = document.getElementById('changeMyPasswordBtn'); if(cmb) cmb.style.display = currentUserRole === 'admin' || currentUserRole === 'user' || currentUserRole === 'transporteur' ? 'inline-block' : 'none'; renderAll(); showToast(`👋 Bonjour ${currentUserName}`); }
     
-    function showNouvelleCommandeClient() {
-        let codeClient = currentClientCode;
-        if(!codeClient) { showToast('Code client non trouvé', 'error'); return; }
-        document.getElementById('clientCmdCode').value = codeClient;
-        new bootstrap.Modal(document.getElementById('nouvelleCommandeModal')).show();
-    }
-    
-    document.getElementById('clientCommandeForm')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        let codeClient = document.getElementById('clientCmdCode').value;
-        let clientName = getClientNameByCode(codeClient);
-        let nb = parseInt(document.getElementById('clientCmdNbCiternes').value);
-        let now = getCurrentDateTime();
-        
-        const newDemande = {
-            date: now.date,
-            heure: now.heure,
-            timestamp: now.timestamp,
-            codeClient: codeClient,
-            client: clientName,
-            produit: document.getElementById('clientCmdProduit').value,
-            nbCiternes: nb,
-            quantite: nb * 27,
-            destination: document.getElementById('clientCmdDestination').value,
-            createdBy: clientName,
-            status: 'en_attente'
-        };
-        
-        database.ref('demandesClient').push(newDemande);
-        addNotification(`🆕 Nouvelle demande de commande de ${clientName} (${codeClient}) - ${nb*27} m³ en attente de validation`, 'success', 'admin');
-        addNotification(`🆕 Nouvelle demande de commande de ${clientName} à valider`, 'success', 'user');
-        showToast('✅ Demande envoyée, en attente de validation');
-        bootstrap.Modal.getInstance(document.getElementById('nouvelleCommandeModal')).hide();
-    });
-    
-    function filtrerClientData() {
-        let code = currentClientCode;
-        if(!code) return;
-        document.getElementById('clientFilterCode').value = code;
-        let clientCommandes = commandes.filter(c => c.codeClient === code);
-        if(clientCommandes.length === 0) { document.getElementById('clientDataContainer').innerHTML = '<div class="alert alert-info">Aucune commande trouvée</div>'; return; }
-        let html = '';
-        clientCommandes.forEach(cmd => {
-            let realise = getRealiseByCommande(cmd.id);
-            let restant = cmd.quantite - realise;
-            let percent = (realise/cmd.quantite)*100;
-            let status = restant<=0 ? '<span class="badge-soldee">Soldée</span>' : (isCommandeRetardee(cmd) ? '<span class="badge-retard">⚠️ En retard</span>' : '<span class="badge-non-soldee">Non soldée</span>');
-            let deliveries = getRealisationsByCommande(cmd.id);
-            let detailLivraison = deliveries.length > 0 ? deliveries.map(d => `<div>🚛 FR:${d.fr} | Chauffeur:${d.chauffeur} | ${d.quantite}m³ | ${d.date} ${d.heure}</div>`).join('') : '<div>Aucune livraison</div>';
-            html += `<div class="card mb-3 p-3" style="background:var(--bg-secondary);border-radius:16px;">
-                <div class="d-flex justify-content-between"><strong>📅 ${cmd.date} ${cmd.heure}</strong> ${status}</div>
-                <div>⛽ ${cmd.produit} | 🚛 ${cmd.nbCiternes} citernes | 📦 ${cmd.quantite} m³</div>
-                <div class="progress-custom my-2"><div class="progress-fill" style="width:${percent}%"></div></div>
-                <div>✅ Réalisé: ${realise} m³ | ⚠️ Restant: ${restant} m³</div>
-                <div class="mt-2"><strong>📋 Livraisons:</strong> ${detailLivraison}</div>
-                <div class="mt-1"><small>📝 Validé par: ${cmd.validePar || 'admin'} le ${cmd.valideLe || cmd.date}</small></div>
-            </div>`;
-        });
-        document.getElementById('clientDataContainer').innerHTML = html;
-    }
-    
-    // ============ VALIDATION DEMANDE CLIENT ==========
-    function validerDemande(id) {
-        if(!hasPermission('validerDemandes')) return showToast('Permission refusée', 'error');
-        let demande = demandesClient.find(d => d.id === id);
-        if(!demande) return;
-        
-        Swal.fire({
-            title: '✅ Valider la demande',
-            text: `Valider la commande de ${demande.client} ?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Oui, valider',
-            cancelButtonText: 'Annuler'
-        }).then(result => {
-            if(result.isConfirmed) {
-                let now = getCurrentDateTime();
-                const newCommande = {
-                    date: now.date,
-                    heure: now.heure,
-                    timestamp: now.timestamp,
-                    codeClient: demande.codeClient,
-                    client: demande.client,
-                    produit: demande.produit,
-                    nbCiternes: demande.nbCiternes,
-                    quantite: demande.quantite,
-                    destination: demande.destination,
-                    createdBy: `${demande.createdBy} → ${currentUserName}`,
-                    validePar: currentUserName,
-                    valideLe: new Date().toLocaleString()
-                };
-                
-                database.ref('commandes').push(newCommande);
-                database.ref(`demandesClient/${id}`).remove();
-                addNotification(`✅ Commande de ${demande.client} validée par ${currentUserName}`, 'success', 'admin');
-                addNotification(`✅ Commande de ${demande.client} validée`, 'success', 'user');
-                showToast('Demande validée avec succès');
-            }
-        });
-    }
-    
-    function refuserDemande(id) {
-        if(!hasPermission('validerDemandes')) return showToast('Permission refusée', 'error');
-        let demande = demandesClient.find(d => d.id === id);
-        if(!demande) return;
-        
-        Swal.fire({
-            title: '❌ Refuser la demande',
-            text: `Refuser la commande de ${demande.client} ?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Oui, refuser',
-            cancelButtonText: 'Annuler',
-            confirmButtonColor: '#ef4444'
-        }).then(result => {
-            if(result.isConfirmed) {
-                database.ref(`demandesClient/${id}`).remove();
-                addNotification(`❌ Commande de ${demande.client} refusée par ${currentUserName}`, 'error', 'admin');
-                showToast('Demande refusée');
-            }
-        });
-    }
-    
-    // ============ GESTION UTILISATEURS ==========
-    function addUser() {
-        if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error');
-        let username = document.getElementById('newUsername').value.trim();
-        let password = document.getElementById('newUserPassword').value;
-        let role = document.getElementById('newUserRole').value;
-        if(!username) return showToast('Nom requis', 'error');
-        if(!password) return showToast('Mot de passe requis', 'error');
-        if(usersDB.find(u => u.username === username)) return showToast('Nom existe déjà', 'error');
-        
-        let permissions = role === 'user' ? { ...defaultPermissions.user } : { ...defaultPermissions.transporteur };
-        
-        database.ref('users').push({ username, password, role, permissions });
-        showToast(`Utilisateur ${username} ajouté - Mot de passe: ${password}`);
-        document.getElementById('newUsername').value = '';
-        document.getElementById('newUserPassword').value = '';
-    }
-    
-    function deleteUser(userId, username) {
-        if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error');
-        if(username === 'admin') return showToast('Impossible de supprimer l\'admin', 'error');
-        database.ref(`users/${userId}`).remove();
-        showToast('Utilisateur supprimé');
-    }
-    
-    function renderUsersTable() {
-        let html = '';
-        usersDB.forEach(u => {
-            let roleClass = u.role === 'admin' ? 'badge-admin' : (u.role === 'user' ? 'badge-user' : 'badge-transporteur');
-            let roleName = u.role === 'admin' ? '👑 Admin' : (u.role === 'user' ? '📝 Utilisateur' : '🚛 Transporteur');
-            
-            let perms = u.permissions || (u.role === 'admin' ? defaultPermissions.admin : (u.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur));
-            let permBadges = '';
-            if(perms.ajouterCommande) permBadges += '<span class="badge bg-success me-1">+Cmd</span>';
-            if(perms.ajouterRealisation) permBadges += '<span class="badge bg-success me-1">+Real</span>';
-            if(perms.validerDemandes) permBadges += '<span class="badge bg-warning me-1">Valider</span>';
-            if(perms.annulerRealisation) permBadges += '<span class="badge bg-danger me-1">Annuler</span>';
-            if(perms.voirDashboard) permBadges += '<span class="badge bg-info me-1">Dashboard</span>';
-            
-            html += `<tr>
-                <td><strong>${u.username}</strong></td>
-                <td><span class="user-badge ${roleClass}">${roleName}</span></td>
-                <td>${permBadges}</td>
-                <td>${u.username !== 'admin' && currentUserRole === 'admin' ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteUser('${u.id}', '${u.username}')"><i class="fas fa-trash"></i> Supprimer</button>` : '—'}</td>
-            </tr>`;
-        });
-        document.getElementById('usersTableBody').innerHTML = html;
-    }
-    
-    // ============ FONCTIONS MÉTIER ==========
-    function getRealiseByCommande(cmdId) { 
-        return realisations.filter(r => r.commandeId === cmdId).reduce((s, r) => s + r.quantite, 0); 
-    }
-    function getRealisationsByCommande(cmdId) { 
-        return realisations.filter(r => r.commandeId === cmdId); 
-    }
-    function isCommandeRetardee(cmd) { 
-        let cmdDate = new Date(cmd.timestamp);
-        let today = new Date();
-        today.setHours(0,0,0,0);
-        let realise = getRealiseByCommande(cmd.id);
-        return (cmdDate < today && realise < cmd.quantite);
-    }
-    
-    function deleteRealisation(realId) {
-        if(!hasPermission('annulerRealisation')) return showToast('Permission refusée', 'error');
-        Swal.fire({ title: 'Confirmation', text: 'Annuler cette réalisation?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Oui' }).then(result => {
-            if(result.isConfirmed) { 
-                database.ref(`realisations/${realId}`).remove();
-                showToast('Réalisation annulée'); 
-            }
-        });
-    }
-    
-    function deleteCommande(cmdId) {
-        if(currentUserRole !== 'admin') return showToast('Seul l\'admin peut supprimer','error');
-        Swal.fire({ title: 'Confirmation', text: 'Supprimer cette commande?', icon: 'warning', showCancelButton: true }).then(result => {
-            if(result.isConfirmed) { 
-                database.ref(`commandes/${cmdId}`).remove();
-                const realisationsToDelete = realisations.filter(r => r.commandeId === cmdId);
-                for(let r of realisationsToDelete) {
-                    database.ref(`realisations/${r.id}`).remove();
-                }
-                showToast('Commande supprimée'); 
-            }
-        });
-    }
-    
-    function renderCommandesListForRealisation() {
-        let filter = document.getElementById('filterCommandesList')?.value.toLowerCase() || '';
-        let nonSoldees = commandes.filter(c => getRealiseByCommande(c.id) < c.quantite);
-        let filtered = nonSoldees.filter(c => c.client.toLowerCase().includes(filter) || c.codeClient.toLowerCase().includes(filter));
-        let container = document.getElementById('commandesListContainer');
-        if(!container) return;
-        container.innerHTML = '';
-        filtered.forEach(cmd => {
-            let realise = getRealiseByCommande(cmd.id);
-            let restant = cmd.quantite - realise;
-            let percent = (realise/cmd.quantite)*100;
-            let card = document.createElement('div');
-            card.style.background = 'var(--bg-secondary)';
-            card.style.borderRadius = '16px';
-            card.style.padding = '12px';
-            card.style.marginBottom = '10px';
-            card.style.cursor = 'pointer';
-            card.style.border = selectedCommandeIdForReal === cmd.id ? '2px solid #dc2626' : '2px solid var(--border-color)';
-            card.onclick = () => {
-                document.querySelectorAll('.commande-card').forEach(c=>c.style.borderColor = 'var(--border-color)');
-                card.style.borderColor = '#dc2626';
-                selectedCommandeIdForReal = cmd.id;
-                document.getElementById('realCmdId').value = cmd.id;
-                let detailDiv = document.getElementById('selectedCommandeDetail');
-                detailDiv.style.display = 'block';
-                detailDiv.innerHTML = `<strong>Client:</strong> ${cmd.client} (${cmd.codeClient})<br><strong>Restant:</strong> ${restant} m³ / ${cmd.quantite} m³<div class="progress-custom mt-2"><div class="progress-fill" style="width:${percent}%"></div></div>`;
-                showToast(`Commande sélectionnée: ${cmd.client}`);
-            };
-            card.className = 'commande-card';
-            card.innerHTML = `<div><strong>${cmd.client}</strong> <small>${cmd.codeClient}</small></div><div>📦 ${cmd.quantite} m³ | ✅ ${realise} m³ | ⚠️ ${restant} m³</div><div class="progress-custom mt-1"><div class="progress-fill" style="width:${percent}%"></div></div><small>📍 ${cmd.destination} - ${cmd.date} ${cmd.heure}</small>`;
-            container.appendChild(card);
-        });
-        if(filtered.length===0) container.innerHTML='<div class="text-center p-3">Aucune commande en instance</div>';
-    }
-    
-    function afficherDetailClient(clientName, clientCode) {
-        let realClient = realisations.filter(r => { let cmd = commandes.find(c=>c.id===r.commandeId); return cmd && cmd.client === clientName; });
-        let html = `<h6>Client: ${clientName} (${clientCode})</h6>
-                    <table class="table table-sm">
-                        <thead><tr><th>FR</th><th>Chauffeur</th><th>Qté</th><th>Date réalisation</th><th>Heure réalisation</th><th>Délai après commande</th><th>Enregistré par</th></tr></thead>
-                        <tbody>`;
-        realClient.forEach(r => { 
-            let cmd = commandes.find(c=>c.id===r.commandeId); 
-            let delai = cmd ? calculerDelaiPrecis(cmd.timestamp, r.timestamp) : '-'; 
-            html += `<tr>
-                        <td><strong>${r.fr}</strong></td>
-                        <td>${r.chauffeur}</td>
-                        <td>${r.quantite} m³</td>
-                        <td>${r.date}</td>
-                        <td>${r.heure}</td>
-                        <td><span class="delai-badge">⏱️ ${delai}</span></td>
-                        <td>${r.createdBy || '?'}</td>
-                    </tr>`;
-        });
-        html += `</tbody></table>`;
-        document.getElementById('clientDetailBody').innerHTML = html;
-        new bootstrap.Modal(document.getElementById('clientDetailModal')).show();
-    }
-    
-    function renderAll() {
-        if(!clientsDB.length) return;
-        
-        updateYesterdayDashboard();
-        updateClientSelect();
-        renderClientsTable();
-        renderUsersTable();
-        
-        if(hasPermission('voirDashboard')) {
-            document.getElementById('dashboardRow').style.display = 'flex';
-        } else {
-            document.getElementById('dashboardRow').style.display = 'none';
-        }
-        
-        if(hasPermission('ajouterRealisation')) {
-            renderCommandesListForRealisation();
-        }
-        
-        // Demandes clients en attente
-        if(hasPermission('validerDemandes')) {
-            let demandesHtml = '';
-            let demandesCount = demandesClient.length;
-            document.getElementById('demandesCount').innerText = demandesCount;
-            
-            demandesClient.forEach(dem => {
-                demandesHtml += `<tr class="ligne-attente">
-                    <td>${dem.date}</td>
-                    <td>${dem.heure}</td>
-                    <td><strong>${dem.client}</strong></td>
-                    <td>${dem.codeClient}</td>
-                    <td>${dem.produit}</td>
-                    <td>${dem.nbCiternes}</td>
-                    <td>${dem.quantite} m³</td>
-                    <td>${dem.destination}</td>
-                    <td><span class="badge-attente">${dem.createdBy}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-success-custom me-1" onclick="validerDemande('${dem.id}')"><i class="fas fa-check"></i> Valider</button>
-                        <button class="btn btn-sm btn-danger-custom" onclick="refuserDemande('${dem.id}')"><i class="fas fa-times"></i> Refuser</button>
-                    </td>
-                </tr>`;
-            });
-            document.getElementById('demandesTableBody').innerHTML = demandesHtml || '<tr><td colspan="10" class="text-center">Aucune demande en attente</td></tr>';
-        }
-        
-        if(currentUserRole !== 'client') {
-            // Commandes du jour
-            let todayFilter = document.getElementById('todayFilterDate')?.value || new Date().toLocaleDateString('fr-FR');
-            let todayHtml = '';
-            commandes.filter(c => c.date === todayFilter).forEach(cmd => {
-                let realise = getRealiseByCommande(cmd.id);
-                let restant = cmd.quantite - realise;
-                let percent = (realise/cmd.quantite)*100;
-                let status = restant<=0 ? '<span class="badge-soldee">Soldée</span>' : '<span class="badge-non-soldee">Non soldée</span>';
-                let deliveries = getRealisationsByCommande(cmd.id);
-                let detailLivraison = deliveries.length > 0 ? deliveries.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure}</div>`).join('') : '<div>Aucune livraison</div>';
-                let canDelete = (currentUserRole === 'admin');
-                let actions = '';
-                if(canDelete) actions = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`;
-                actions += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`;
-                
-                todayHtml += `<tr>
-                    <td>${cmd.heure||'--:--'}</td>
-                    <td><strong>${cmd.client}</strong></td>
-                    <td>${cmd.codeClient}</td>
-                    <td>${cmd.produit}</td>
-                    <td>${cmd.quantite} m³</td>
-                    <td>${realise} m³</td>
-                    <td class="text-warning fw-bold">${restant} m³</td>
-                    <td><div class="progress-custom"><div class="progress-fill" style="width:${percent}%"></div></div><small>${Math.round(percent)}%</small></td>
-                    <td>${status}</td>
-                    <td>${detailLivraison}</td>
-                    <td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td>
-                    <td>${actions}</td>
-                </tr>`;
-            });
-            document.getElementById('todayTableBody').innerHTML = todayHtml || '<tr><td colspan="12" class="text-center">Aucune commande aujourd\'hui</td></tr>';
-            
-            // Commandes en instance
-            let pendingHtml = '';
-            commandes.filter(c => getRealiseByCommande(c.id) < c.quantite).forEach(cmd => {
-                let realise = getRealiseByCommande(cmd.id);
-                let restant = cmd.quantite - realise;
-                let percent = (realise/cmd.quantite)*100;
-                let isRetard = isCommandeRetardee(cmd);
-                let status = isRetard ? '<span class="badge-retard">⚠️ En retard</span>' : '<span class="badge-non-soldee">Non soldée</span>';
-                let rowClass = isRetard ? 'ligne-retard' : '';
-                let deliveries = getRealisationsByCommande(cmd.id);
-                let detailLivraison = deliveries.length > 0 ? deliveries.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure} ${hasPermission('annulerRealisation') ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteRealisation('${d.id}')"><i class="fas fa-times"></i> Annuler</button>` : ''}</div>`).join('') : '<div>Aucune livraison</div>';
-                let canDelete = (currentUserRole === 'admin');
-                let actions = '';
-                if(canDelete) actions = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`;
-                actions += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`;
-                
-                pendingHtml += `<tr class="${rowClass}">
-                    <td>${cmd.date}</td>
-                    <td>${cmd.heure||'--:--'}</td>
-                    <td><strong>${cmd.client}</strong></td>
-                    <td>${cmd.codeClient}</td>
-                    <td>${cmd.produit}</td>
-                    <td>${cmd.quantite} m³</td>
-                    <td>${realise} m³</td>
-                    <td class="text-warning fw-bold">${restant} m³</td>
-                    <td><div class="progress-custom"><div class="progress-fill" style="width:${percent}%"></div></div><small>${Math.round(percent)}%</small></td>
-                    <td>${status}</td>
-                    <td>${detailLivraison}</td>
-                    <td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td>
-                    <td>${actions}</td>
-                </tr>`;
-            });
-            document.getElementById('pendingTableBody').innerHTML = pendingHtml || '<tr><td colspan="13" class="text-center">Aucune commande en instance</td></tr>';
-        } else {
-            if(document.getElementById('clientFilterCode')) {
-                document.getElementById('clientFilterCode').value = currentClientCode || '';
-                filtrerClientData();
-            }
-        }
-    }
-    
-    // ============ AUTHENTIFICATION ==========
-    function login() {
-        const role = document.getElementById('userSelect').value;
-        const pwd = document.getElementById('passwordInput').value;
-        
-        if(role === 'client') {
-            let codeClient = document.getElementById('clientCodeInput').value.trim();
-            if(!codeClient) { 
-                Swal.fire('Erreur', 'Entrez votre code client', 'error'); 
-                return; 
-            }
-            let clientExists = clientsDB.find(c => c.code === codeClient);
-            if(!clientExists) { 
-                Swal.fire('Erreur', 'Code client invalide', 'error'); 
-                return; 
-            }
-            currentClientCode = codeClient;
-            currentUserRole = 'client';
-            currentUserName = clientExists.nom;
-            currentUserId = null;
-            currentUserPermissions = null;
-        } else {
-            let user = usersDB.find(u => u.username === role && u.password === pwd);
-            if(!user) {
-                Swal.fire('Erreur', 'Nom d\'utilisateur ou mot de passe incorrect', 'error');
-                return;
-            }
-            currentUserRole = user.role;
-            currentUserName = user.username;
-            currentUserId = user.id;
-            currentClientCode = null;
-            currentUserPermissions = user.permissions || (user.role === 'admin' ? defaultPermissions.admin : (user.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur));
-        }
-        
-        document.getElementById('loginOverlay').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        
-        let roleText = currentUserRole === 'admin' ? '👑 Admin' : (currentUserRole === 'user' ? '📝 Utilisateur' : (currentUserRole === 'transporteur' ? '🚛 Transporteur' : '👥 Client'));
-        document.getElementById('userName').innerHTML = currentUserName;
-        let roleBadge = document.getElementById('userRoleBadge');
-        roleBadge.innerHTML = roleText;
-        roleBadge.className = `user-badge ${currentUserRole === 'admin' ? 'badge-admin' : (currentUserRole === 'user' ? 'badge-user' : (currentUserRole === 'transporteur' ? 'badge-transporteur' : 'badge-client'))}`;
-        
-        renderTabsByRole();
-        renderAll();
-        showToast(`👋 Bonjour ${currentUserName}`);
-    }
-    
-    document.getElementById('userSelect')?.addEventListener('change', function() {
-        let showClient = document.getElementById('clientCodeDiv');
-        if(showClient) showClient.style.display = this.value === 'client' ? 'block' : 'none';
-        document.getElementById('passwordInput').value = '';
-    });
+    document.getElementById('userSelect')?.addEventListener('change', function() { let sc = document.getElementById('clientCodeDiv'); if(sc) sc.style.display = this.value === 'client' ? 'block' : 'none'; document.getElementById('passwordInput').value = ''; });
     document.getElementById('loginBtn')?.addEventListener('click', login);
     document.getElementById('passwordInput')?.addEventListener('keypress', function(e) { if(e.key === 'Enter') login(); });
     
-    function logout() { 
-        document.getElementById('loginOverlay').style.display = 'flex'; 
-        document.getElementById('mainApp').style.display = 'none'; 
-        document.getElementById('passwordInput').value = '';
-        if(document.getElementById('clientCodeInput')) document.getElementById('clientCodeInput').value = '';
-        currentUserRole = null;
-    }
-    
-    function renderTabsByRole() {
-        let tabs = [];
-        
-        if(currentUserRole === 'client') {
-            tabs.push({id:'client', name:'👥 Mon espace'});
-        } 
-        else if(currentUserRole === 'transporteur') {
-            tabs.push({id:'today', name:'📅 Commandes du jour'});
-            tabs.push({id:'pending', name:'⏳ En instance & Retard'});
-        }
-        else if(currentUserRole === 'admin' || currentUserRole === 'user') {
-            if(hasPermission('validerDemandes')) tabs.push({id:'demandes', name:'📋 Demandes clients'});
-            if(hasPermission('ajouterCommande') || hasPermission('ajouterRealisation')) tabs.push({id:'register', name:'📝 Enregistrement'});
-            if(hasPermission('voirDashboard')) {
-                tabs.push({id:'today', name:'📅 Commandes du jour'});
-                tabs.push({id:'pending', name:'⏳ En instance & Retard'});
-            }
-            if(currentUserRole === 'admin') {
-                tabs.push({id:'clients', name:'👥 Base clients'});
-                tabs.push({id:'users', name:'👥 Gestion utilisateurs'});
-            }
-        }
-        
-        let html = tabs.map((t,i)=>`<div class="tab-btn ${i===0?'active':''}" data-tab="${t.id}">${t.name}</div>`).join('');
-        document.getElementById('tabsContainer').innerHTML = html;
-        
-        document.querySelectorAll('.tab-btn').forEach(btn=>{
-            btn.addEventListener('click',()=>{
-                document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-                btn.classList.add('active');
-                document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active-pane'));
-                const id = btn.dataset.tab;
-                if(id==='demandes') document.getElementById('tabDemandes').classList.add('active-pane');
-                else if(id==='register') document.getElementById('tabRegister').classList.add('active-pane');
-                else if(id==='today') document.getElementById('tabToday').classList.add('active-pane');
-                else if(id==='pending') document.getElementById('tabPending').classList.add('active-pane');
-                else if(id==='client') document.getElementById('tabClient').classList.add('active-pane');
-                else if(id==='clients') document.getElementById('tabClients').classList.add('active-pane');
-                else if(id==='users') document.getElementById('tabUsers').classList.add('active-pane');
-            });
-        });
-        
-        if(currentUserRole === 'client') {
-            document.getElementById('tabClient').classList.add('active-pane');
-        } else if(currentUserRole === 'transporteur') {
-            document.getElementById('tabToday').classList.add('active-pane');
-        } else if(document.getElementById('tabDemandes') && hasPermission('validerDemandes')) {
-            document.getElementById('tabDemandes').classList.add('active-pane');
-        } else if(document.getElementById('tabToday') && hasPermission('voirDashboard')) {
-            document.getElementById('tabToday').classList.add('active-pane');
-        } else if(document.getElementById('tabRegister') && (hasPermission('ajouterCommande') || hasPermission('ajouterRealisation'))) {
-            document.getElementById('tabRegister').classList.add('active-pane');
-        } else {
-            document.getElementById('tabToday').classList.add('active-pane');
-        }
-    }
+    function logout() { document.getElementById('loginOverlay').style.display = 'flex'; document.getElementById('mainApp').style.display = 'none'; document.getElementById('passwordInput').value = ''; if(document.getElementById('clientCodeInput')) document.getElementById('clientCodeInput').value = ''; currentUserRole = null; }
     
     document.getElementById('cmdNbCiternes')?.addEventListener('input', function(){ let nb = parseInt(this.value)||0; document.getElementById('cmdQuantite').value = (nb*27)+' m³'; });
-    function resetCommandeForm() { 
-        document.getElementById('commandeForm').reset(); 
-        document.getElementById('cmdQuantite').value = ''; 
-        let now = getCurrentDateTime(); 
-        document.getElementById('cmdDate').value = now.date; 
-        document.getElementById('cmdHeure').value = now.heure; 
-        document.getElementById('cmdClient').value = ''; 
-        showToast('Formulaire réinitialisé'); 
-    }
-    
-    document.getElementById('commandeForm')?.addEventListener('submit', async function(e){
-        e.preventDefault(); 
-        if(!hasPermission('ajouterCommande')) return showToast('Permission refusée','error');
-        let codeClient = document.getElementById('cmdCodeClient').value; 
-        let clientName = getClientNameByCode(codeClient);
-        if(!clientName) return showToast('Code client invalide','error');
-        
-        let action = await checkPendingAndConfirm(codeClient);
-        if(action === 'cancel') return;
-        
-        let nb = parseInt(document.getElementById('cmdNbCiternes').value);
-        if(!nb) return showToast('Nombre de citernes invalide','error');
-        let now = getCurrentDateTime();
-        
-        const newCommande = {
-            date: now.date,
-            heure: now.heure,
-            timestamp: now.timestamp,
-            codeClient: codeClient,
-            client: clientName,
-            produit: document.getElementById('cmdProduit').value,
-            nbCiternes: nb,
-            quantite: nb * 27,
-            destination: document.getElementById('cmdDestination').value,
-            createdBy: currentUserName
-        };
-        
-        database.ref('commandes').push(newCommande);
-        showToast('✅ Commande ajoutée'); 
-        resetCommandeForm();
-    });
-    
-    document.getElementById('realisationForm')?.addEventListener('submit', function(e){
-        e.preventDefault(); 
-        if(!hasPermission('ajouterRealisation')) return showToast('Permission refusée','error');
-        let cmdId = document.getElementById('realCmdId').value;
-        if(!cmdId) return showToast('Sélectionnez une commande','error');
-        let cmd = commandes.find(c => c.id === cmdId);
-        if(!cmd) return showToast('Commande introuvable','error');
-        let realiseTotal = getRealiseByCommande(cmdId); 
-        let newQt = parseFloat(document.getElementById('realQuantite').value);
-        if(realiseTotal + newQt > cmd.quantite) return showToast('Quantité dépasse le reste','error');
-        let now = getCurrentDateTime();
-        
-        const newRealisation = {
-            commandeId: cmdId,
-            date: now.date,
-            heure: now.heure,
-            timestamp: now.timestamp,
-            fr: document.getElementById('realFR').value,
-            chauffeur: document.getElementById('realChauffeur').value,
-            quantite: newQt,
-            createdBy: currentUserName
-        };
-        
-        database.ref('realisations').push(newRealisation);
-        showToast('✅ Réalisation ajoutée');
-        document.getElementById('realisationForm').reset(); 
-        document.getElementById('realCmdId').value = ''; 
-        selectedCommandeIdForReal = null; 
-        document.getElementById('selectedCommandeDetail').style.display = 'none';
-    });
-    
+    function resetCommandeForm() { document.getElementById('commandeForm').reset(); document.getElementById('cmdQuantite').value = ''; let n = getCurrentDateTime(); document.getElementById('cmdDate').value = n.date; document.getElementById('cmdHeure').value = n.heure; document.getElementById('cmdClient').value = ''; showToast('Formulaire réinitialisé'); }
+    document.getElementById('commandeForm')?.addEventListener('submit', async function(e){ e.preventDefault(); if(!hasPermission('ajouterCommande')) return showToast('Permission refusée','error'); let cc = document.getElementById('cmdCodeClient').value, cn = getClientNameByCode(cc); if(!cn) return showToast('Code client invalide','error'); await checkPendingAndConfirm(cc); let nb = parseInt(document.getElementById('cmdNbCiternes').value); if(!nb) return showToast('Nombre invalide','error'); let n = getCurrentDateTime(); database.ref('commandes').push({ date: n.date, heure: n.heure, timestamp: n.timestamp, codeClient: cc, client: cn, produit: document.getElementById('cmdProduit').value, nbCiternes: nb, quantite: nb*27, destination: document.getElementById('cmdDestination').value, createdBy: currentUserName }); showToast('✅ Commande ajoutée'); resetCommandeForm(); });
+    document.getElementById('realisationForm')?.addEventListener('submit', function(e){ e.preventDefault(); if(!hasPermission('ajouterRealisation')) return showToast('Permission refusée','error'); let cid = document.getElementById('realCmdId').value; if(!cid) return showToast('Sélectionnez une commande','error'); let cmd = commandes.find(c => c.id === cid); if(!cmd) return showToast('Commande introuvable','error'); let rt = getRealiseByCommande(cid); let nq = parseFloat(document.getElementById('realQuantite').value); if(rt + nq > cmd.quantite) return showToast('Quantité dépasse le reste','error'); let n = getCurrentDateTime(); database.ref('realisations').push({ commandeId: cid, date: n.date, heure: n.heure, timestamp: n.timestamp, fr: document.getElementById('realFR').value, chauffeur: document.getElementById('realChauffeur').value, quantite: nq, createdBy: currentUserName }); showToast('✅ Réalisation ajoutée'); document.getElementById('realisationForm').reset(); document.getElementById('realCmdId').value = ''; selectedCommandeIdForReal = null; document.getElementById('selectedCommandeDetail').style.display = 'none'; });
     document.getElementById('filterCommandesList')?.addEventListener('input', () => renderCommandesListForRealisation());
     document.getElementById('todayFilterDate')?.addEventListener('change', () => renderAll());
     
-    function toggleDarkMode() { 
-        document.body.classList.toggle('dark'); 
-        localStorage.setItem('darkMode', document.body.classList.contains('dark')); 
-        document.getElementById('darkModeText').innerText = document.body.classList.contains('dark') ? 'Light' : 'Sombre'; 
-    }
+    function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark')); document.getElementById('darkModeText').innerText = document.body.classList.contains('dark') ? 'Light' : 'Sombre'; }
     if(localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark');
     
-    let nowInit = getCurrentDateTime();
-    if(document.getElementById('realDate')) document.getElementById('realDate').value = nowInit.date;
-    if(document.getElementById('realHeure')) document.getElementById('realHeure').value = nowInit.heure;
-    if(document.getElementById('cmdDate')) document.getElementById('cmdDate').value = nowInit.date;
-    if(document.getElementById('cmdHeure')) document.getElementById('cmdHeure').value = nowInit.heure;
+    let ninit = getCurrentDateTime(); if(document.getElementById('realDate')) document.getElementById('realDate').value = ninit.date; if(document.getElementById('realHeure')) document.getElementById('realHeure').value = ninit.heure; if(document.getElementById('cmdDate')) document.getElementById('cmdDate').value = ninit.date; if(document.getElementById('cmdHeure')) document.getElementById('cmdHeure').value = ninit.heure;
     
-    loadSavedLogo();
-    initFirebaseData();
+    loadSavedLogo(); initFirebaseData();
+    window.deleteClient = deleteClient; window.deleteUser = deleteUser; window.deleteCommande = deleteCommande; window.deleteRealisation = deleteRealisation; window.addClient = addClient; window.addUser = addUser; window.openChangePassword = openChangePassword; window.openChangeMyPassword = openChangeMyPassword; window.openPermissionsModal = openPermissionsModal; window.savePermissions = savePermissions; window.saveNewPassword = saveNewPassword; window.saveMyNewPassword = saveMyNewPassword; window.demanderRappel = demanderRappel; window.showNouvelleCommandeClient = showNouvelleCommandeClient; window.filtrerClientData = filtrerClientData; window.validerDemande = validerDemande; window.refuserDemande = refuserDemande; window.afficherDetailClient = afficherDetailClient; window.resetCommandeForm = resetCommandeForm; window.toggleDarkMode = toggleDarkMode; window.logout = logout;
 </script>
 </body>
 </html>
