@@ -12,7 +12,6 @@
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
@@ -21,7 +20,7 @@
             --bg-secondary: #ffffff;
             --text-primary: #1e293b;
             --text-secondary: #475569;
-            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-bg: rgba(255,255,255,0.95);
             --border-color: #e2e8f0;
             --accent: #4f46e5;
             --danger: #ef4444;
@@ -34,7 +33,7 @@
             --bg-secondary: #1e293b;
             --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
-            --card-bg: rgba(30, 41, 59, 0.95);
+            --card-bg: rgba(30,41,59,0.95);
             --border-color: #334155;
             --gold: #fbbf24;
         }
@@ -97,7 +96,6 @@
             .table-premium { font-size: 0.65rem; }
             .table-premium td, .table-premium th { padding: 6px; }
             .user-info { gap: 5px; }
-            .btn-client-action { padding: 4px 8px; font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -140,6 +138,7 @@
         <i class="fas fa-user-circle"></i> <strong id="userName"></strong>
         <span id="userRoleBadge" class="user-badge ms-1"></span>
         <button class="btn btn-sm btn-outline ms-2 py-0 px-2" onclick="logout()">Déconnexion</button>
+        <!-- Seul l'admin et l'utilisateur peuvent changer leur mot de passe -->
         <button class="btn btn-sm btn-warning-custom py-0 px-2" id="changeMyPasswordBtn" onclick="openChangeMyPassword()" style="display:none;"><i class="fas fa-key"></i> Changer MDP</button>
     </div>
     
@@ -166,6 +165,7 @@
         
         <div class="custom-tabs" id="tabsContainer"></div>
 
+        <!-- Demandes clients -->
         <div id="tabDemandes" class="tab-pane">
             <div class="glass-card">
                 <div class="card-header-premium">
@@ -183,6 +183,7 @@
             </div>
         </div>
 
+        <!-- Enregistrement -->
         <div id="tabRegister" class="tab-pane">
             <div class="row">
                 <div class="col-md-6">
@@ -233,6 +234,7 @@
             </div>
         </div>
 
+        <!-- Commandes du jour -->
         <div id="tabToday" class="tab-pane">
             <div class="glass-card">
                 <div class="card-header-premium">📅 Commandes du jour <input type="date" id="todayFilterDate" class="form-control d-inline-block w-auto ms-2" style="width:150px;"></div>
@@ -240,6 +242,7 @@
             </div>
         </div>
 
+        <!-- En instance -->
         <div id="tabPending" class="tab-pane">
             <div class="glass-card">
                 <div class="card-header-premium">⏳ Commandes non soldées & Retard</div>
@@ -270,6 +273,7 @@
             </div>
         </div>
 
+        <!-- Base clients -->
         <div id="tabClients" class="tab-pane">
             <div class="glass-card">
                 <div class="card-header-premium">👥 Base clients</div>
@@ -280,6 +284,7 @@
             </div>
         </div>
 
+        <!-- Gestion utilisateurs -->
         <div id="tabUsers" class="tab-pane">
             <div class="glass-card">
                 <div class="card-header-premium"><i class="fas fa-users"></i> Gestion des utilisateurs & permissions</div>
@@ -292,9 +297,7 @@
                     </div>
                     <div class="table-responsive">
                         <table class="table table-premium">
-                            <thead>
-                                <tr><th>Nom</th><th>Rôle</th><th>Actions</th><th>Permissions</th><th>Admin Actions</th></tr>
-                            </thead>
+                            <thead><tr><th>Nom</th><th>Rôle</th><th>Actions</th><th>Permissions</th><th>Admin Actions</th></tr></thead>
                             <tbody id="usersTableBody"></tbody>
                         </table>
                     </div>
@@ -436,13 +439,24 @@
     function deleteUser(id, un) { if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error'); if(un === 'admin') return showToast('Impossible', 'error'); database.ref(`users/${id}`).remove(); showToast('Utilisateur supprimé'); }
     function openChangePassword(id, un) { document.getElementById('passwordUserId').value = id; document.getElementById('newUserPasswordModal').value = ''; document.getElementById('confirmUserPasswordModal').value = ''; new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); }
     function saveNewPassword() { let id = document.getElementById('passwordUserId').value, np = document.getElementById('newUserPasswordModal').value.trim(), cp = document.getElementById('confirmUserPasswordModal').value.trim(); if(!np) return showToast('Mot de passe requis','error'); if(np !== cp) return showToast('Les mots de passe ne correspondent pas','error'); database.ref(`users/${id}`).update({ password: np }); showToast('Mot de passe mis à jour'); bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide(); }
-    function openChangeMyPassword() { document.getElementById('oldPasswordInput').value = ''; document.getElementById('myNewPasswordInput').value = ''; document.getElementById('myConfirmPasswordInput').value = ''; new bootstrap.Modal(document.getElementById('changeMyPasswordModal')).show(); }
+    
+    function openChangeMyPassword() { 
+        if(currentUserRole === 'transporteur') { showToast('Les transporteurs ne peuvent pas changer leur mot de passe', 'error'); return; }
+        document.getElementById('oldPasswordInput').value = ''; document.getElementById('myNewPasswordInput').value = ''; document.getElementById('myConfirmPasswordInput').value = ''; new bootstrap.Modal(document.getElementById('changeMyPasswordModal')).show(); 
+    }
     function saveMyNewPassword() { let old = document.getElementById('oldPasswordInput').value.trim(), np = document.getElementById('myNewPasswordInput').value.trim(), cp = document.getElementById('myConfirmPasswordInput').value.trim(); if(!old) return showToast('Ancien mot de passe requis','error'); if(!np) return showToast('Nouveau mot de passe requis','error'); if(np !== cp) return showToast('Les mots de passe ne correspondent pas','error'); let u = usersDB.find(u => u.id === currentUserId); if(!u || u.password !== old) return showToast('Ancien mot de passe incorrect','error'); database.ref(`users/${currentUserId}`).update({ password: np }); showToast('Mot de passe mis à jour'); bootstrap.Modal.getInstance(document.getElementById('changeMyPasswordModal')).hide(); }
     
     function openPermissionsModal(uid, un, perms) { document.getElementById('permissionsUserId').value = uid; document.getElementById('permissionsUserName').innerText = un; document.getElementById('permAjouterCommande').checked = perms.ajouterCommande||false; document.getElementById('permAjouterRealisation').checked = perms.ajouterRealisation||false; document.getElementById('permValiderDemandes').checked = perms.validerDemandes||false; document.getElementById('permAnnulerRealisation').checked = perms.annulerRealisation||false; document.getElementById('permVoirDashboard').checked = perms.voirDashboard||false; document.getElementById('permVoirDemandes').checked = perms.voirDemandes||false; document.getElementById('permVoirRegister').checked = perms.voirRegister||false; document.getElementById('permVoirToday').checked = perms.voirToday||false; document.getElementById('permVoirPending').checked = perms.voirPending||false; document.getElementById('permVoirClients').checked = perms.voirClients||false; document.getElementById('permVoirUsers').checked = perms.voirUsers||false; document.getElementById('permVoirClientSpace').checked = perms.voirClientSpace||false; new bootstrap.Modal(document.getElementById('permissionsModal')).show(); }
     function savePermissions() { let uid = document.getElementById('permissionsUserId').value; let np = { ajouterCommande: document.getElementById('permAjouterCommande').checked, ajouterRealisation: document.getElementById('permAjouterRealisation').checked, validerDemandes: document.getElementById('permValiderDemandes').checked, annulerRealisation: document.getElementById('permAnnulerRealisation').checked, voirDashboard: document.getElementById('permVoirDashboard').checked, voirDemandes: document.getElementById('permVoirDemandes').checked, voirRegister: document.getElementById('permVoirRegister').checked, voirToday: document.getElementById('permVoirToday').checked, voirPending: document.getElementById('permVoirPending').checked, voirClients: document.getElementById('permVoirClients').checked, voirUsers: document.getElementById('permVoirUsers').checked, voirClientSpace: document.getElementById('permVoirClientSpace').checked }; database.ref(`users/${uid}`).update({ permissions: np }); showToast('Permissions mises à jour'); bootstrap.Modal.getInstance(document.getElementById('permissionsModal')).hide(); }
     
-    function renderUsersTable() { let h = ''; usersDB.forEach(u => { let rc = u.role === 'admin' ? 'badge-admin' : (u.role === 'user' ? 'badge-user' : 'badge-transporteur'), rn = u.role === 'admin' ? '👑 Admin' : (u.role === 'user' ? '📝 Utilisateur' : '🚛 Transporteur'); let perms = u.permissions || (u.role === 'admin' ? defaultPermissions.admin : (u.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur)); let pb = ''; if(perms.ajouterCommande) pb += '<span class="badge bg-success me-1">+Cmd</span>'; if(perms.ajouterRealisation) pb += '<span class="badge bg-success me-1">+Real</span>'; if(perms.validerDemandes) pb += '<span class="badge bg-warning me-1">Valider</span>'; if(perms.annulerRealisation) pb += '<span class="badge bg-danger me-1">Annuler</span>'; let ob = ''; if(perms.voirDemandes) ob += '<span class="badge bg-info me-1">Demandes</span>'; if(perms.voirRegister) ob += '<span class="badge bg-info me-1">Enreg.</span>'; if(perms.voirToday) ob += '<span class="badge bg-info me-1">Today</span>'; if(perms.voirPending) ob += '<span class="badge bg-info me-1">Pending</span>'; if(perms.voirClients) ob += '<span class="badge bg-info me-1">Clients</span>'; if(perms.voirUsers) ob += '<span class="badge bg-info me-1">Users</span>'; if(perms.voirClientSpace) ob += '<span class="badge bg-info me-1">Client</span>'; h += `<tr><td><strong>${u.username}</strong></td><td><span class="user-badge ${rc}">${rn}</span></td><td><button class="btn btn-sm btn-info-custom me-1" onclick="openChangePassword('${u.id}', '${u.username}')"><i class="fas fa-key"></i> MDP</button>${u.username !== 'admin' && currentUserRole === 'admin' ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteUser('${u.id}', '${u.username}')"><i class="fas fa-trash"></i> Suppr</button>` : ''}</td><td>${pb}<br><small>${ob||'Aucun'}</small></td><td><button class="btn btn-sm btn-warning-custom" onclick="openPermissionsModal('${u.id}', '${u.username}', ${JSON.stringify(perms).replace(/"/g, '&quot;')})"><i class="fas fa-edit"></i> Permissions</button></td></tr>`; }); document.getElementById('usersTableBody').innerHTML = h; }
+    function renderUsersTable() { let h = ''; usersDB.forEach(u => { let rc = u.role === 'admin' ? 'badge-admin' : (u.role === 'user' ? 'badge-user' : 'badge-transporteur'), rn = u.role === 'admin' ? '👑 Admin' : (u.role === 'user' ? '📝 Utilisateur' : '🚛 Transporteur'); let perms = u.permissions || (u.role === 'admin' ? defaultPermissions.admin : (u.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur)); let pb = ''; if(perms.ajouterCommande) pb += '<span class="badge bg-success me-1">+Cmd</span>'; if(perms.ajouterRealisation) pb += '<span class="badge bg-success me-1">+Real</span>'; if(perms.validerDemandes) pb += '<span class="badge bg-warning me-1">Valider</span>'; if(perms.annulerRealisation) pb += '<span class="badge bg-danger me-1">Annuler</span>'; let ob = ''; if(perms.voirDemandes) ob += '<span class="badge bg-info me-1">Demandes</span>'; if(perms.voirRegister) ob += '<span class="badge bg-info me-1">Enreg.</span>'; if(perms.voirToday) ob += '<span class="badge bg-info me-1">Today</span>'; if(perms.voirPending) ob += '<span class="badge bg-info me-1">Pending</span>'; if(perms.voirClients) ob += '<span class="badge bg-info me-1">Clients</span>'; if(perms.voirUsers) ob += '<span class="badge bg-info me-1">Users</span>'; if(perms.voirClientSpace) ob += '<span class="badge bg-info me-1">Client</span>'; h += `<tr>
+                <td><strong>${u.username}</strong></td>
+                <td><span class="user-badge ${rc}">${rn}</span></td>
+                <td><button class="btn btn-sm btn-info-custom me-1" onclick="openChangePassword('${u.id}', '${u.username}')"><i class="fas fa-key"></i> MDP</button>${u.username !== 'admin' && currentUserRole === 'admin' ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteUser('${u.id}', '${u.username}')"><i class="fas fa-trash"></i> Suppr</button>` : ''}</td>
+                <td>${pb}<br><small>${ob||'Aucun'}</small></td>
+                <td><button class="btn btn-sm btn-warning-custom" onclick="openPermissionsModal('${u.id}', '${u.username}', ${JSON.stringify(perms).replace(/"/g, '&quot;')})"><i class="fas fa-edit"></i> Permissions</button></td>
+            </tr>`;
+    }); document.getElementById('usersTableBody').innerHTML = h; }
     
     function getRealiseByCommande(cmdId) { return realisations.filter(r => r.commandeId === cmdId).reduce((s,r) => s + r.quantite, 0); }
     function getRealisationsByCommande(cmdId) { return realisations.filter(r => r.commandeId === cmdId); }
@@ -450,13 +464,63 @@
     function deleteRealisation(rid) { if(!hasPermission('annulerRealisation')) return showToast('Permission refusée', 'error'); Swal.fire({ title: 'Confirmation', text: 'Annuler cette réalisation?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Oui' }).then(res => { if(res.isConfirmed) { database.ref(`realisations/${rid}`).remove(); showToast('Réalisation annulée'); } }); }
     function deleteCommande(cid) { if(currentUserRole !== 'admin') return showToast('Seul admin peut supprimer','error'); Swal.fire({ title: 'Confirmation', text: 'Supprimer cette commande?', icon: 'warning', showCancelButton: true }).then(res => { if(res.isConfirmed) { database.ref(`commandes/${cid}`).remove(); realisations.filter(r => r.commandeId === cid).forEach(r => database.ref(`realisations/${r.id}`).remove()); showToast('Commande supprimée'); } }); }
     function renderCommandesListForRealisation() { let f = document.getElementById('filterCommandesList')?.value.toLowerCase() || ''; let ns = commandes.filter(c => getRealiseByCommande(c.id) < c.quantite); let fd = ns.filter(c => c.client.toLowerCase().includes(f) || c.codeClient.toLowerCase().includes(f)); let ctr = document.getElementById('commandesListContainer'); if(!ctr) return; ctr.innerHTML = ''; fd.forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100; let cd = document.createElement('div'); cd.style.cssText = 'background:var(--bg-secondary);border-radius:16px;padding:12px;margin-bottom:10px;cursor:pointer;border:2px solid var(--border-color)'; if(selectedCommandeIdForReal === cmd.id) cd.style.borderColor = '#dc2626'; cd.onclick = () => { document.querySelectorAll('.commande-card').forEach(c=>c.style.borderColor = 'var(--border-color)'); cd.style.borderColor = '#dc2626'; selectedCommandeIdForReal = cmd.id; document.getElementById('realCmdId').value = cmd.id; let dd = document.getElementById('selectedCommandeDetail'); dd.style.display = 'block'; dd.innerHTML = `<strong>Client:</strong> ${cmd.client} (${cmd.codeClient})<br><strong>Restant:</strong> ${rt} m³ / ${cmd.quantite} m³<div class="progress-custom mt-2"><div class="progress-fill" style="width:${p}%"></div></div>`; showToast(`Commande sélectionnée: ${cmd.client}`); }; cd.className = 'commande-card'; cd.innerHTML = `<div><strong>${cmd.client}</strong> <small>${cmd.codeClient}</small></div><div>📦 ${cmd.quantite} m³ | ✅ ${r} m³ | ⚠️ ${rt} m³</div><div class="progress-custom mt-1"><div class="progress-fill" style="width:${p}%"></div></div><small>📍 ${cmd.destination} - ${cmd.date} ${cmd.heure}</small>`; ctr.appendChild(cd); }); if(fd.length===0) ctr.innerHTML='<div class="text-center p-3">Aucune commande en instance</div>'; }
-    function afficherDetailClient(cn, cc) { let rc = realisations.filter(r => { let c = commandes.find(c => c.id === r.commandeId); return c && c.client === cn; }); let h = `<h6>Client: ${cn} (${cc})</h6><table class="table table-sm"><thead><tr><th>FR</th><th>Chauffeur</th><th>Qté</th><th>Date réalisation</th><th>Heure</th><th>Délai</th><th>Par</th></td></thead><tbody>`; rc.forEach(r => { let c = commandes.find(c => c.id === r.commandeId); let d = c ? calculerDelaiPrecis(c.timestamp, r.timestamp) : '-'; h += `<tr><td><strong>${r.fr}</strong></td><td>${r.chauffeur}</td><td>${r.quantite} m³</td><td>${r.date}</td><td>${r.heure}</td><td><span class="delai-badge">⏱️ ${d}</span></td><td>${r.createdBy || '?'}</td></tr>`; }); h += `</tbody></table>`; document.getElementById('clientDetailBody').innerHTML = h; new bootstrap.Modal(document.getElementById('clientDetailModal')).show(); }
+    function afficherDetailClient(cn, cc) { let rc = realisations.filter(r => { let c = commandes.find(c => c.id === r.commandeId); return c && c.client === cn; }); let h = `<h6>Client: ${cn} (${cc})</h6><table class="table table-sm"><thead><tr><th>FR</th><th>Chauffeur</th><th>Qté</th><th>Date réalisation</th><th>Heure</th><th>Délai</th><th>Par</th></tr></thead><tbody>`; rc.forEach(r => { let c = commandes.find(c => c.id === r.commandeId); let d = c ? calculerDelaiPrecis(c.timestamp, r.timestamp) : '-'; h += `<tr><td><strong>${r.fr}</strong></td><td>${r.chauffeur}</td><td>${r.quantite} m³</td><td>${r.date}</td><td>${r.heure}</td><td><span class="delai-badge">⏱️ ${d}</span></td><td>${r.createdBy || '?'}</td></tr>`; }); h += `</tbody></table>`; document.getElementById('clientDetailBody').innerHTML = h; new bootstrap.Modal(document.getElementById('clientDetailModal')).show(); }
     
     function renderTabs() { let tabs = []; if(currentUserRole === 'client') { if(hasPermission('voirClientSpace')) tabs.push({id:'client', name:'👤 Mon espace'}); } else if(currentUserRole === 'transporteur') { if(hasPermission('voirToday')) tabs.push({id:'today', name:'📅 Commandes du jour'}); if(hasPermission('voirPending')) tabs.push({id:'pending', name:'⏳ En instance & Retard'}); } else { if(hasPermission('voirDemandes')) tabs.push({id:'demandes', name:'📋 Demandes clients'}); if(hasPermission('voirRegister')) tabs.push({id:'register', name:'📝 Enregistrement'}); if(hasPermission('voirToday')) tabs.push({id:'today', name:'📅 Commandes du jour'}); if(hasPermission('voirPending')) tabs.push({id:'pending', name:'⏳ En instance & Retard'}); if(currentUserRole === 'admin') { if(hasPermission('voirClients')) tabs.push({id:'clients', name:'👥 Base clients'}); if(hasPermission('voirUsers')) tabs.push({id:'users', name:'👥 Gestion utilisateurs'}); } } let html = tabs.map((t,i)=>`<div class="tab-btn ${i===0?'active':''}" data-tab="${t.id}">${t.name}</div>`).join(''); document.getElementById('tabsContainer').innerHTML = html; document.querySelectorAll('.tab-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active-pane')); const id = btn.dataset.tab; if(id==='demandes') document.getElementById('tabDemandes').classList.add('active-pane'); else if(id==='register') document.getElementById('tabRegister').classList.add('active-pane'); else if(id==='today') document.getElementById('tabToday').classList.add('active-pane'); else if(id==='pending') document.getElementById('tabPending').classList.add('active-pane'); else if(id==='client') document.getElementById('tabClient').classList.add('active-pane'); else if(id==='clients') document.getElementById('tabClients').classList.add('active-pane'); else if(id==='users') document.getElementById('tabUsers').classList.add('active-pane'); }); }); if(currentUserRole === 'client') { if(hasPermission('voirClientSpace')) document.getElementById('tabClient').classList.add('active-pane'); } else if(currentUserRole === 'transporteur') { if(hasPermission('voirToday')) document.getElementById('tabToday').classList.add('active-pane'); else if(hasPermission('voirPending')) document.getElementById('tabPending').classList.add('active-pane'); } else { if(hasPermission('voirDemandes')) document.getElementById('tabDemandes').classList.add('active-pane'); else if(hasPermission('voirRegister')) document.getElementById('tabRegister').classList.add('active-pane'); else if(hasPermission('voirToday')) document.getElementById('tabToday').classList.add('active-pane'); else if(hasPermission('voirPending')) document.getElementById('tabPending').classList.add('active-pane'); else if(hasPermission('voirClients')) document.getElementById('tabClients').classList.add('active-pane'); else if(hasPermission('voirUsers')) document.getElementById('tabUsers').classList.add('active-pane'); else document.getElementById('tabToday').classList.add('active-pane'); } }
     
-    function renderAll() { if(!clientsDB.length) return; updateYesterdayDashboard(); updateClientSelect(); renderClientsTable(); renderUsersTable(); if(hasPermission('voirDashboard')) document.getElementById('dashboardRow').style.display = 'flex'; else document.getElementById('dashboardRow').style.display = 'none'; if(hasPermission('ajouterRealisation')) renderCommandesListForRealisation(); if(hasPermission('voirDemandes')) { let dh = '', dc = demandesClient.length; document.getElementById('demandesCount').innerText = dc; demandesClient.forEach(d => { dh += `<tr class="ligne-attente"><td>${d.date}</td><td>${d.heure}</td><td><strong>${d.client}</strong></td><td>${d.codeClient}</td><td>${d.produit}</td><td>${d.nbCiternes}</td><td>${d.quantite} m³</td><td>${d.destination}</td><td><span class="badge-attente">${d.createdBy}</span></td><td><button class="btn btn-sm btn-success-custom me-1" onclick="validerDemande('${d.id}')"><i class="fas fa-check"></i> Valider</button><button class="btn btn-sm btn-danger-custom" onclick="refuserDemande('${d.id}')"><i class="fas fa-times"></i> Refuser</button></td></tr>`; }); document.getElementById('demandesTableBody').innerHTML = dh || '<tr><td colspan="10" class="text-center">Aucune demande en attente\n\n</td></tr>'; } if(currentUserRole !== 'client') { let tf = document.getElementById('todayFilterDate')?.value || new Date().toLocaleDateString('fr-FR'), th = ''; commandes.filter(c => c.date === tf).forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100, s = rt<=0 ? '<span class="badge-soldee">Soldée</span>' : '<span class="badge-non-soldee">Non soldée</span>'; let dels = getRealisationsByCommande(cmd.id), dl = dels.length > 0 ? dels.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure}</div>`).join('') : '<div>Aucune livraison</div>'; let acts = ''; if(currentUserRole === 'admin') acts = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`; acts += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`; th += `<tr><td>${cmd.heure||'--:--'}</td><td><strong>${cmd.client}</strong></td><td>${cmd.codeClient}</td><td>${cmd.produit}</td><td>${cmd.quantite} m³</td><td>${r} m³</td><td class="text-warning fw-bold">${rt} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td><td>${s}</td><td>${dl}</td><td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td><td>${acts}</td></tr>`; }); document.getElementById('todayTableBody').innerHTML = th || '<tr><td colspan="12" class="text-center">Aucune commande aujourd\'hui\n\n</td></tr>'; if(hasPermission('voirPending')) { let ph = ''; commandes.filter(c => getRealiseByCommande(c.id) < c.quantite).forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100, ir = isCommandeRetardee(cmd), s = ir ? '<span class="badge-retard">⚠️ En retard</span>' : '<span class="badge-non-soldee">Non soldée</span>', rc = ir ? 'ligne-retard' : ''; let dels = getRealisationsByCommande(cmd.id), dl = dels.length > 0 ? dels.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure} ${hasPermission('annulerRealisation') ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteRealisation('${d.id}')"><i class="fas fa-times"></i> Annuler</button>` : ''}</div>`).join('') : '<div>Aucune livraison</div>'; let acts = ''; if(currentUserRole === 'admin') acts = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`; acts += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`; ph += `<tr class="${rc}"><td>${cmd.date}</td><td>${cmd.heure||'--:--'}</td><td><strong>${cmd.client}</strong></td><td>${cmd.codeClient}</td><td>${cmd.produit}</td><td>${cmd.quantite} m³</td><td>${r} m³</td><td class="text-warning fw-bold">${rt} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td><td>${s}</td><td>${dl}</td><td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td><td>${acts}</td></tr>`; }); document.getElementById('pendingTableBody').innerHTML = ph || '<tr><td colspan="13" class="text-center">Aucune commande en instance\n\n</td></tr>'; } } else { if(document.getElementById('clientFilterCode')) { document.getElementById('clientFilterCode').value = currentClientCode || ''; filtrerClientData(); } } renderTabs(); }
+    function renderAll() { if(!clientsDB.length) return; updateYesterdayDashboard(); updateClientSelect(); renderClientsTable(); renderUsersTable(); if(hasPermission('voirDashboard')) document.getElementById('dashboardRow').style.display = 'flex'; else document.getElementById('dashboardRow').style.display = 'none'; if(hasPermission('ajouterRealisation')) renderCommandesListForRealisation(); if(hasPermission('voirDemandes')) { let dh = '', dc = demandesClient.length; document.getElementById('demandesCount').innerText = dc; demandesClient.forEach(d => { dh += `<tr class="ligne-attente"><td>${d.date}</td><td>${d.heure}</td><td><strong>${d.client}</strong></td><td>${d.codeClient}</td><td>${d.produit}</td><td>${d.nbCiternes}</td><td>${d.quantite} m³</td><td>${d.destination}</td><td><span class="badge-attente">${d.createdBy}</span></td><td><button class="btn btn-sm btn-success-custom me-1" onclick="validerDemande('${d.id}')"><i class="fas fa-check"></i> Valider</button><button class="btn btn-sm btn-danger-custom" onclick="refuserDemande('${d.id}')"><i class="fas fa-times"></i> Refuser</button></td></td>`; }); document.getElementById('demandesTableBody').innerHTML = dh || '<tr><td colspan="10" class="text-center">Aucune demande en attente</td></tr>'; } if(currentUserRole !== 'client') { let tf = document.getElementById('todayFilterDate')?.value || new Date().toLocaleDateString('fr-FR'), th = ''; commandes.filter(c => c.date === tf).forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100, s = rt<=0 ? '<span class="badge-soldee">Soldée</span>' : '<span class="badge-non-soldee">Non soldée</span>'; let dels = getRealisationsByCommande(cmd.id), dl = dels.length > 0 ? dels.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure}</div>`).join('') : '<div>Aucune livraison</div>'; let acts = ''; if(currentUserRole === 'admin') acts = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`; acts += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`; th += `<tr>
+                <td>${cmd.heure||'--:--'}</td>
+                <td><strong>${cmd.client}</strong></td>
+                <td>${cmd.codeClient}</td>
+                <td>${cmd.produit}</td>
+                <td>${cmd.quantite} m³</td>
+                <td>${r} m³</td>
+                <td class="text-warning fw-bold">${rt} m³</td>
+                <td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td>
+                <td>${s}</td>
+                <tr>${dl}</td>
+                <td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td>
+                <td>${acts}</td>
+            </tr>`;
+            }); document.getElementById('todayTableBody').innerHTML = th || '<tr><td colspan="12" class="text-center">Aucune commande aujourd\'hui</td></tr>'; if(hasPermission('voirPending')) { let ph = ''; commandes.filter(c => getRealiseByCommande(c.id) < c.quantite).forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100, ir = isCommandeRetardee(cmd), s = ir ? '<span class="badge-retard">⚠️ En retard</span>' : '<span class="badge-non-soldee">Non soldée</span>', rc = ir ? 'ligne-retard' : ''; let dels = getRealisationsByCommande(cmd.id), dl = dels.length > 0 ? dels.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure} ${hasPermission('annulerRealisation') ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteRealisation('${d.id}')"><i class="fas fa-times"></i> Annuler</button>` : ''}</div>`).join('') : '<div>Aucune livraison</div>'; let acts = ''; if(currentUserRole === 'admin') acts = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`; acts += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`; ph += `<tr class="${rc}"><td>${cmd.date}</td><td>${cmd.heure||'--:--'}</td><td><strong>${cmd.client}</strong></td><td>${cmd.codeClient}</td><td>${cmd.produit}</td><td>${cmd.quantite} m³</td><td>${r} m³</td><td class="text-warning fw-bold">${rt} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td><td>${s}</td><td>${dl}</td><td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td><td>${acts}</td></tr>`; }); document.getElementById('pendingTableBody').innerHTML = ph || '<tr><td colspan="13" class="text-center">Aucune commande en instance</td></tr>'; } } else { if(document.getElementById('clientFilterCode')) { document.getElementById('clientFilterCode').value = currentClientCode || ''; filtrerClientData(); } } renderTabs(); }
     
-    function login() { const r = document.getElementById('userSelect').value, p = document.getElementById('passwordInput').value; if(r === 'client') { let cc = document.getElementById('clientCodeInput').value.trim(); if(!cc) { Swal.fire('Erreur', 'Entrez votre code client', 'error'); return; } let ce = clientsDB.find(c => c.code === cc); if(!ce) { Swal.fire('Erreur', 'Code client invalide', 'error'); return; } currentClientCode = cc; currentUserRole = 'client'; currentUserName = ce.nom; currentUserId = null; currentUserPermissions = defaultPermissions.transporteur; currentUserPermissions.voirClientSpace = true; } else { let u = usersDB.find(u => u.username === r && u.password === p); if(!u) { Swal.fire('Erreur', 'Nom d\'utilisateur ou mot de passe incorrect', 'error'); return; } currentUserRole = u.role; currentUserName = u.username; currentUserId = u.id; currentClientCode = null; currentUserPermissions = u.permissions || (u.role === 'admin' ? defaultPermissions.admin : (u.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur)); } document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('mainApp').style.display = 'block'; let rt = currentUserRole === 'admin' ? '👑 Admin' : (currentUserRole === 'user' ? '📝 Utilisateur' : (currentUserRole === 'transporteur' ? '🚛 Transporteur' : '👥 Client')); document.getElementById('userName').innerHTML = currentUserName; let rb = document.getElementById('userRoleBadge'); rb.innerHTML = rt; rb.className = `user-badge ${currentUserRole === 'admin' ? 'badge-admin' : (currentUserRole === 'user' ? 'badge-user' : (currentUserRole === 'transporteur' ? 'badge-transporteur' : 'badge-client'))}`; let cmb = document.getElementById('changeMyPasswordBtn'); if(cmb) cmb.style.display = currentUserRole === 'admin' || currentUserRole === 'user' || currentUserRole === 'transporteur' ? 'inline-block' : 'none'; renderAll(); showToast(`👋 Bonjour ${currentUserName}`); }
+    function login() { 
+        const r = document.getElementById('userSelect').value; 
+        const p = document.getElementById('passwordInput').value; 
+        
+        if(r === 'client') { 
+            let cc = document.getElementById('clientCodeInput').value.trim(); 
+            if(!cc) { Swal.fire('Erreur', 'Entrez votre code client', 'error'); return; } 
+            let ce = clientsDB.find(c => c.code === cc); 
+            if(!ce) { Swal.fire('Erreur', 'Code client invalide', 'error'); return; } 
+            currentClientCode = cc; 
+            currentUserRole = 'client'; 
+            currentUserName = ce.nom; 
+            currentUserId = null; 
+            currentUserPermissions = { ajouterCommande: false, ajouterRealisation: false, validerDemandes: false, annulerRealisation: false, voirDashboard: false, voirDemandes: false, voirRegister: false, voirToday: false, voirPending: false, voirClients: false, voirUsers: false, voirClientSpace: true };
+        } else { 
+            let u = usersDB.find(u => u.username === r && u.password === p); 
+            if(!u) { Swal.fire('Erreur', 'Nom d\'utilisateur ou mot de passe incorrect', 'error'); return; } 
+            currentUserRole = u.role; 
+            currentUserName = u.username; 
+            currentUserId = u.id; 
+            currentClientCode = null; 
+            currentUserPermissions = u.permissions || (u.role === 'admin' ? defaultPermissions.admin : (u.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur)); 
+        } 
+        
+        document.getElementById('loginOverlay').style.display = 'none'; 
+        document.getElementById('mainApp').style.display = 'block'; 
+        
+        let rt = currentUserRole === 'admin' ? '👑 Admin' : (currentUserRole === 'user' ? '📝 Utilisateur' : (currentUserRole === 'transporteur' ? '🚛 Transporteur' : '👥 Client')); 
+        document.getElementById('userName').innerHTML = currentUserName; 
+        let rb = document.getElementById('userRoleBadge'); 
+        rb.innerHTML = rt; 
+        rb.className = `user-badge ${currentUserRole === 'admin' ? 'badge-admin' : (currentUserRole === 'user' ? 'badge-user' : (currentUserRole === 'transporteur' ? 'badge-transporteur' : 'badge-client'))}`; 
+        let cmb = document.getElementById('changeMyPasswordBtn'); 
+        if(cmb) cmb.style.display = (currentUserRole === 'admin' || currentUserRole === 'user') && currentUserRole !== 'transporteur' ? 'inline-block' : 'none'; 
+        renderAll(); 
+        showToast(`👋 Bonjour ${currentUserName}`); 
+    }
     
     document.getElementById('userSelect')?.addEventListener('change', function() { let sc = document.getElementById('clientCodeDiv'); if(sc) sc.style.display = this.value === 'client' ? 'block' : 'none'; document.getElementById('passwordInput').value = ''; });
     document.getElementById('loginBtn')?.addEventListener('click', login);
