@@ -14,7 +14,9 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <style>
+        /* STYLES (identiques à avant) */
         :root {
             --bg-primary: #eef2f3;
             --bg-secondary: #ffffff;
@@ -96,6 +98,7 @@
             .table-premium { font-size: 0.65rem; }
             .table-premium td, .table-premium th { padding: 6px; }
             .user-info { gap: 5px; }
+            .btn-client-action { padding: 4px 8px; font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -119,10 +122,12 @@
             <input type="text" id="clientCodeInput" class="form-control mb-3" placeholder="Code Client (ex: CL001)">
         </div>
         <button class="btn btn-premium w-100" id="loginBtn">Se connecter</button>
+        <div id="loginError" class="text-danger mt-2 small text-center" style="display:none;"></div>
     </div>
 </div>
 
 <div id="mainApp" style="display:none;">
+    <!-- Le contenu HTML est identique à avant, mais je le garde complet pour éviter les erreurs -->
     <div class="naftal-logo-container" id="logoContainer">
         <div id="logoDisplay"><i class="fas fa-oil-can" style="font-size: 32px; color: #d4af37;"></i></div>
         <div class="btn-add-logo" onclick="addLogoManually()" title="Ajouter logo"><i class="fas fa-plus"></i></div>
@@ -138,8 +143,8 @@
         <i class="fas fa-user-circle"></i> <strong id="userName"></strong>
         <span id="userRoleBadge" class="user-badge ms-1"></span>
         <button class="btn btn-sm btn-outline ms-2 py-0 px-2" onclick="logout()">Déconnexion</button>
-        <!-- Seul l'admin et l'utilisateur peuvent changer leur mot de passe -->
         <button class="btn btn-sm btn-warning-custom py-0 px-2" id="changeMyPasswordBtn" onclick="openChangeMyPassword()" style="display:none;"><i class="fas fa-key"></i> Changer MDP</button>
+        <button class="btn btn-sm btn-danger-custom py-0 px-2" id="resetAllDataBtn" onclick="resetAllOperationalData()" style="display:none;"><i class="fas fa-trash-alt"></i> Reset tout</button>
     </div>
     
     <div class="container-custom">
@@ -153,207 +158,28 @@
             <div class="col-12">
                 <div class="dashboard-card">
                     <h4><i class="fas fa-calendar-day"></i> Réalisations d'hier: <span id="yesterdayDate"></span></h4>
-                    <div class="table-responsive">
-                        <table class="table table-premium">
-                            <thead><tr><th>Client</th><th>Code</th><th>Produit</th><th>Quantité commandée (m³)</th><th>Quantité réalisée (m³)</th><th>Taux</th></tr></thead>
-                            <tbody id="yesterdayTableBody"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table class="table table-premium"><thead><tr><th>Client</th><th>Code</th><th>Produit</th><th>Quantité commandée (m³)</th><th>Quantité réalisée (m³)</th><th>Taux</th></tr></thead><tbody id="yesterdayTableBody"></tbody></table></div>
                 </div>
             </div>
         </div>
         
         <div class="custom-tabs" id="tabsContainer"></div>
-
-        <!-- Demandes clients -->
-        <div id="tabDemandes" class="tab-pane">
-            <div class="glass-card">
-                <div class="card-header-premium">
-                    <i class="fas fa-clock"></i> 📋 Demandes clients en attente de validation
-                    <span id="demandesCount" class="badge bg-warning ms-2">0</span>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-premium">
-                            <thead><tr><th>Date</th><th>Heure</th><th>Client</th><th>Code</th><th>Produit</th><th>Citernes</th><th>Qté (m³)</th><th>Destination</th><th>Demandé par</th><th>Actions</th></tr></thead>
-                            <tbody id="demandesTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Enregistrement -->
-        <div id="tabRegister" class="tab-pane">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="glass-card">
-                        <div class="card-header-premium"><i class="fas fa-plus-circle"></i> Nouvelle Commande</div>
-                        <div class="card-body p-4">
-                            <form id="commandeForm">
-                                <div class="row g-3">
-                                    <div class="col-6"><label>📅 Date</label><input type="text" id="cmdDate" class="form-control" readonly></div>
-                                    <div class="col-6"><label>⏰ Heure</label><input type="text" id="cmdHeure" class="form-control" readonly></div>
-                                    <div class="col-6"><label>🏷️ Code Client</label>
-                                        <input type="text" id="cmdCodeClient" class="form-control" list="clientsCodeList" autocomplete="off" placeholder="Ex: CL001" required>
-                                        <datalist id="clientsCodeList"></datalist>
-                                    </div>
-                                    <div class="col-6"><label>👤 Client</label><input type="text" id="cmdClient" class="form-control" readonly></div>
-                                    <div class="col-6"><label>⛽ Produit</label><select id="cmdProduit" class="form-select"><option>Gasoil</option><option>Sans Plomb</option></select></div>
-                                    <div class="col-6"><label>🚛 Citernes</label><input type="number" id="cmdNbCiternes" class="form-control" min="1" required></div>
-                                    <div class="col-4"><label>📦 Qté (m³)</label><input type="text" id="cmdQuantite" class="form-control" readonly></div>
-                                    <div class="col-4"><label>📍 Destination</label><input type="text" id="cmdDestination" class="form-control" list="destinationsList" autocomplete="off" required><datalist id="destinationsList"></datalist></div>
-                                    <div class="col-4 d-flex gap-2"><button type="submit" class="btn btn-premium w-100"><i class="fas fa-save"></i> Ajouter</button><button type="button" class="btn btn-outline" onclick="resetCommandeForm()"><i class="fas fa-undo-alt"></i> Nouveau</button></div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="glass-card">
-                        <div class="card-header-premium"><i class="fas fa-check-circle"></i> Nouvelle Réalisation</div>
-                        <div class="card-body p-4">
-                            <div class="mb-3"><label>🔍 Filtrer commandes</label><input type="text" id="filterCommandesList" class="form-control" placeholder="Client ou code"></div>
-                            <div id="commandesListContainer" class="row-commandes-list" style="max-height:350px; overflow-y:auto;"></div>
-                            <div id="selectedCommandeDetail" class="detail-commande mt-3" style="display:none; background:rgba(79,70,229,0.08); border-radius:16px; padding:12px;"></div>
-                            <hr>
-                            <form id="realisationForm">
-                                <input type="hidden" id="realCmdId" value="">
-                                <div class="row g-3">
-                                    <div class="col-6"><label>📅 Date réalisation</label><input type="text" id="realDate" class="form-control" readonly></div>
-                                    <div class="col-6"><label>⏰ Heure réalisation</label><input type="text" id="realHeure" class="form-control" readonly></div>
-                                    <div class="col-6"><label>🔢 FR N°</label><input type="text" id="realFR" class="form-control" list="frList" autocomplete="off" required><datalist id="frList"></datalist></div>
-                                    <div class="col-6"><label>👨‍✈️ Chauffeur</label><input type="text" id="realChauffeur" class="form-control" list="chauffeursList" autocomplete="off" required><datalist id="chauffeursList"></datalist></div>
-                                    <div class="col-6"><label>📦 Qté (m³)</label><input type="number" id="realQuantite" class="form-control" step="1" min="1" required></div>
-                                    <div class="col-12"><button type="submit" class="btn btn-premium w-100"><i class="fas fa-check"></i> Ajouter réalisation</button></div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Commandes du jour -->
-        <div id="tabToday" class="tab-pane">
-            <div class="glass-card">
-                <div class="card-header-premium">📅 Commandes du jour <input type="date" id="todayFilterDate" class="form-control d-inline-block w-auto ms-2" style="width:150px;"></div>
-                <div class="card-body p-0"><div class="table-responsive"><table class="table table-premium"><thead><tr><th>Heure</th><th>Client</th><th>Code</th><th>Produit</th><th>Qté</th><th>Réalisé</th><th>Restant</th><th>%</th><th>Statut</th><th>Détail livraison</th><th>Créé par</th><th>Actions</th></tr></thead><tbody id="todayTableBody"></tbody></table></div></div>
-            </div>
-        </div>
-
-        <!-- En instance -->
-        <div id="tabPending" class="tab-pane">
-            <div class="glass-card">
-                <div class="card-header-premium">⏳ Commandes non soldées & Retard</div>
-                <div class="card-body p-0"><div class="table-responsive"><table class="table table-premium"><thead><tr><th>Date Cmd</th><th>Heure</th><th>Client</th><th>Code</th><th>Produit</th><th>Qté</th><th>Réalisé</th><th>Restant</th><th>%</th><th>Statut</th><th>Détail livraison</th><th>Créé par</th><th>Actions</th></tr></thead><tbody id="pendingTableBody"></tbody></table></div></div>
-            </div>
-        </div>
-
-        <!-- Espace Client -->
-        <div id="tabClient" class="tab-pane">
-            <div class="glass-card">
-                <div class="card-header-premium">
-                    <i class="fas fa-user"></i> Mon Espace Client
-                    <div class="float-end">
-                        <button class="btn btn-sm btn-warning-custom btn-client-action" onclick="demanderRappel()" id="rappelBtn"><i class="fas fa-bell"></i> 📢 Rappel retard</button>
-                        <button class="btn btn-sm btn-success-custom btn-client-action" onclick="showNouvelleCommandeClient()" id="nouvelleCmdBtn"><i class="fas fa-plus"></i> 📝 Nouvelle commande</button>
-                    </div>
-                </div>
-                <div class="card-body p-3">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">🔑 Code client:</label>
-                        <input type="text" id="clientFilterCode" class="form-control filter-client-input" readonly>
-                        <button class="btn btn-premium mt-2 w-100" onclick="filtrerClientData()"><i class="fas fa-search"></i> Afficher mes commandes</button>
-                    </div>
-                    <div id="clientDataContainer" class="mt-3">
-                        <div class="alert alert-info text-center">Cliquez sur "Afficher mes commandes" pour voir vos commandes</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Base clients -->
-        <div id="tabClients" class="tab-pane">
-            <div class="glass-card">
-                <div class="card-header-premium">👥 Base clients</div>
-                <div class="card-body p-3">
-                    <div class="row mb-3"><div class="col-md-4"><input type="text" id="newClientCode" class="form-control" placeholder="Code (ex: CL010)"></div><div class="col-md-4"><input type="text" id="newClientName" class="form-control" placeholder="Nom client"></div><div class="col-md-4"><button class="btn btn-premium" onclick="addClient()"><i class="fas fa-plus"></i> Ajouter</button></div></div>
-                    <div class="table-responsive"><table class="table table-premium"><thead><tr><th>Code</th><th>Nom</th><th>Action</th></tr></thead><tbody id="clientsTableBody"></tbody></table></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Gestion utilisateurs -->
-        <div id="tabUsers" class="tab-pane">
-            <div class="glass-card">
-                <div class="card-header-premium"><i class="fas fa-users"></i> Gestion des utilisateurs & permissions</div>
-                <div class="card-body p-3">
-                    <div class="row mb-4">
-                        <div class="col-md-3"><input type="text" id="newUsername" class="form-control" placeholder="Nom"></div>
-                        <div class="col-md-3"><input type="password" id="newUserPassword" class="form-control" placeholder="Mot de passe"></div>
-                        <div class="col-md-3"><select id="newUserRole" class="form-select"><option value="user">Utilisateur</option><option value="transporteur">Transporteur</option></select></div>
-                        <div class="col-md-3"><button class="btn btn-premium w-100" onclick="addUser()"><i class="fas fa-user-plus"></i> Ajouter</button></div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-premium">
-                            <thead><tr><th>Nom</th><th>Rôle</th><th>Actions</th><th>Permissions</th><th>Admin Actions</th></tr></thead>
-                            <tbody id="usersTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
         
-        <!-- Modals -->
-        <div class="modal fade" id="changePasswordModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">🔐 Changer le mot de passe</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
-            <input type="hidden" id="passwordUserId">
-            <div class="mb-3"><label>Nouveau mot de passe</label><input type="password" id="newUserPasswordModal" class="form-control"></div>
-            <div class="mb-3"><label>Confirmer</label><input type="password" id="confirmUserPasswordModal" class="form-control"></div>
-            <button class="btn btn-premium w-100" onclick="saveNewPassword()">Enregistrer</button>
-        </div></div></div></div>
-        
-        <div class="modal fade" id="changeMyPasswordModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">🔐 Changer mon mot de passe</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
-            <div class="mb-3"><label>Ancien mot de passe</label><input type="password" id="oldPasswordInput" class="form-control"></div>
-            <div class="mb-3"><label>Nouveau mot de passe</label><input type="password" id="myNewPasswordInput" class="form-control"></div>
-            <div class="mb-3"><label>Confirmer</label><input type="password" id="myConfirmPasswordInput" class="form-control"></div>
-            <button class="btn btn-premium w-100" onclick="saveMyNewPassword()">Enregistrer</button>
-        </div></div></div></div>
-        
-        <div class="modal fade" id="permissionsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">🔐 Gérer les permissions</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
-            <input type="hidden" id="permissionsUserId">
-            <div class="mb-3"><label class="fw-bold">Utilisateur: <span id="permissionsUserName"></span></label></div>
-            <hr><h6>📋 Actions</h6>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permAjouterCommande"><label class="form-check-label">➕ Ajouter commande</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permAjouterRealisation"><label class="form-check-label">🚛 Ajouter réalisation</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permValiderDemandes"><label class="form-check-label">✅ Valider demandes</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permAnnulerRealisation"><label class="form-check-label">❌ Annuler réalisation</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirDashboard"><label class="form-check-label">📊 Voir dashboard</label></div>
-            <hr><h6>📑 Onglets visibles</h6>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirDemandes"><label class="form-check-label">📋 Demandes clients</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirRegister"><label class="form-check-label">📝 Enregistrement</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirToday"><label class="form-check-label">📅 Commandes du jour</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirPending"><label class="form-check-label">⏳ En instance & Retard</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirClients"><label class="form-check-label">👥 Base clients</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirUsers"><label class="form-check-label">👥 Gestion utilisateurs</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirClientSpace"><label class="form-check-label">👤 Mon espace client</label></div>
-            <hr><button class="btn btn-premium w-100" onclick="savePermissions()">Enregistrer</button>
-        </div></div></div></div>
-        
-        <div class="modal fade" id="clientDetailModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">Détail des livraisons</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="clientDetailBody"></div></div></div></div>
-        
-        <div class="modal fade" id="nouvelleCommandeModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5 class="modal-title">📝 Nouvelle demande de commande</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
-            <form id="clientCommandeForm">
-                <div class="mb-3"><label>Code Client</label><input type="text" id="clientCmdCode" class="form-control" readonly></div>
-                <div class="mb-3"><label>Produit</label><select id="clientCmdProduit" class="form-select"><option>Gasoil</option><option>Sans Plomb</option></select></div>
-                <div class="mb-3"><label>Nombre de citernes</label><input type="number" id="clientCmdNbCiternes" class="form-control" min="1" required oninput="document.getElementById('clientCmdQuantite').value = (this.value * 27) + ' m³'"></div>
-                <div class="mb-3"><label>Quantité (m³)</label><input type="text" id="clientCmdQuantite" class="form-control" readonly></div>
-                <div class="mb-3"><label>Destination</label><input type="text" id="clientCmdDestination" class="form-control" required></div>
-                <div class="alert alert-warning small">⚠️ Cette demande sera examinée par nos équipes.</div>
-                <button type="submit" class="btn btn-premium w-100">📨 Envoyer la demande</button>
-            </form>
-        </div></div></div></div>
+        <div id="tabDemandes" class="tab-pane"><div class="glass-card"><div class="card-header-premium"><i class="fas fa-clock"></i> 📋 Demandes clients en attente <span id="demandesCount" class="badge bg-warning ms-2">0</span></div><div class="card-body p-0"><div class="table-responsive"><table class="table table-premium"><thead><tr><th>Date</th><th>Heure</th><th>Client</th><th>Code</th><th>Produit</th><th>Citernes</th><th>Qté (m³)</th><th>Destination</th><th>Demandé par</th><th>Actions</th></tr></thead><tbody id="demandesTableBody"></tbody></table></div></div></div></div>
+        <div id="tabRegister" class="tab-pane"><div class="row"><div class="col-md-6"><div class="glass-card"><div class="card-header-premium"><i class="fas fa-plus-circle"></i> Nouvelle Commande</div><div class="card-body p-4"><form id="commandeForm"><div class="row g-3"><div class="col-6"><label>📅 Date</label><input type="text" id="cmdDate" class="form-control" readonly></div><div class="col-6"><label>⏰ Heure</label><input type="text" id="cmdHeure" class="form-control" readonly></div><div class="col-6"><label>🏷️ Code Client</label><input type="text" id="cmdCodeClient" class="form-control" list="clientsCodeList" autocomplete="off" required><datalist id="clientsCodeList"></datalist></div><div class="col-6"><label>👤 Client</label><input type="text" id="cmdClient" class="form-control" readonly></div><div class="col-6"><label>⛽ Produit</label><select id="cmdProduit" class="form-select"><option>Gasoil</option><option>Sans Plomb</option></select></div><div class="col-6"><label>🚛 Citernes</label><input type="number" id="cmdNbCiternes" class="form-control" min="1" required></div><div class="col-4"><label>📦 Qté (m³)</label><input type="text" id="cmdQuantite" class="form-control" readonly></div><div class="col-4"><label>📍 Destination</label><input type="text" id="cmdDestination" class="form-control" list="destinationsList" autocomplete="off" required><datalist id="destinationsList"></datalist></div><div class="col-4 d-flex gap-2"><button type="submit" class="btn btn-premium w-100"><i class="fas fa-save"></i> Ajouter</button><button type="button" class="btn btn-outline" onclick="resetCommandeForm()"><i class="fas fa-undo-alt"></i> Nouveau</button></div></div></form></div></div></div><div class="col-md-6"><div class="glass-card"><div class="card-header-premium"><i class="fas fa-check-circle"></i> Nouvelle Réalisation</div><div class="card-body p-4"><div class="mb-3"><label>🔍 Filtrer commandes</label><input type="text" id="filterCommandesList" class="form-control" placeholder="Client ou code"></div><div id="commandesListContainer" style="max-height:350px; overflow-y:auto;"></div><div id="selectedCommandeDetail" style="display:none; background:rgba(79,70,229,0.08); border-radius:16px; padding:12px;"></div><hr><form id="realisationForm"><input type="hidden" id="realCmdId"><div class="row g-3"><div class="col-6"><label>📅 Date réalisation</label><input type="text" id="realDate" class="form-control" readonly></div><div class="col-6"><label>⏰ Heure réalisation</label><input type="text" id="realHeure" class="form-control" readonly></div><div class="col-6"><label>🔢 FR N°</label><input type="text" id="realFR" class="form-control" list="frList" autocomplete="off" required><datalist id="frList"></datalist></div><div class="col-6"><label>👨‍✈️ Chauffeur</label><input type="text" id="realChauffeur" class="form-control" list="chauffeursList" autocomplete="off" required><datalist id="chauffeursList"></datalist></div><div class="col-6"><label>📦 Qté (m³)</label><input type="number" id="realQuantite" class="form-control" step="1" min="1" required></div><div class="col-12"><button type="submit" class="btn btn-premium w-100"><i class="fas fa-check"></i> Ajouter réalisation</button></div></div></form></div></div></div></div></div>
+        <div id="tabToday" class="tab-pane"><div class="glass-card"><div class="card-header-premium">📅 Commandes du jour <input type="date" id="todayFilterDate" class="form-control d-inline-block w-auto ms-2" style="width:150px;"></div><div class="card-body p-0"><div class="table-responsive"><table class="table table-premium"><thead><tr><th>Heure</th><th>Client</th><th>Code</th><th>Produit</th><th>Qté</th><th>Réalisé</th><th>Restant</th><th>%</th><th>Statut</th><th>Détail livraison</th><th>Créé par</th><th>Actions</th></tr></thead><tbody id="todayTableBody"></tbody></table></div></div></div></div>
+        <div id="tabPending" class="tab-pane"><div class="glass-card"><div class="card-header-premium">⏳ Commandes non soldées & Retard</div><div class="card-body p-0"><div class="table-responsive"><table class="table table-premium"><thead><tr><th>Date Cmd</th><th>Heure</th><th>Client</th><th>Code</th><th>Produit</th><th>Qté</th><th>Réalisé</th><th>Restant</th><th>%</th><th>Statut</th><th>Détail livraison</th><th>Créé par</th><th>Actions</th></tr></thead><tbody id="pendingTableBody"></tbody></table></div></div></div></div>
+        <div id="tabClient" class="tab-pane"><div class="glass-card"><div class="card-header-premium"><i class="fas fa-user"></i> Mon Espace Client <div class="float-end"><button class="btn btn-sm btn-warning-custom btn-client-action" onclick="demanderRappel()">📢 Rappel retard</button><button class="btn btn-sm btn-success-custom btn-client-action" onclick="showNouvelleCommandeClient()">📝 Nouvelle commande</button></div></div><div class="card-body p-3"><div class="mb-3"><label class="form-label fw-bold">🔑 Code client:</label><input type="text" id="clientFilterCode" class="form-control filter-client-input" readonly><button class="btn btn-premium mt-2 w-100" onclick="filtrerClientData()"><i class="fas fa-search"></i> Afficher mes commandes</button></div><div id="clientDataContainer"><div class="alert alert-info text-center">Cliquez sur "Afficher mes commandes" pour voir vos commandes</div></div></div></div></div>
+        <div id="tabClients" class="tab-pane"><div class="glass-card"><div class="card-header-premium">👥 Base clients</div><div class="card-body p-3"><div class="row mb-3"><div class="col-md-4"><input type="text" id="newClientCode" class="form-control" placeholder="Code (ex: CL010)"></div><div class="col-md-4"><input type="text" id="newClientName" class="form-control" placeholder="Nom client"></div><div class="col-md-4"><button class="btn btn-premium" onclick="addClient()"><i class="fas fa-plus"></i> Ajouter</button></div></div><div class="table-responsive"><table class="table table-premium"><thead><tr><th>Code</th><th>Nom</th><th>Action</th></tr></thead><tbody id="clientsTableBody"></tbody></table></div></div></div></div>
+        <div id="tabUsers" class="tab-pane"><div class="glass-card"><div class="card-header-premium"><i class="fas fa-users"></i> Gestion des utilisateurs & permissions</div><div class="card-body p-3"><div class="row mb-4"><div class="col-md-3"><input type="text" id="newUsername" class="form-control" placeholder="Nom"></div><div class="col-md-3"><input type="password" id="newUserPassword" class="form-control" placeholder="Mot de passe"></div><div class="col-md-3"><select id="newUserRole" class="form-select"><option value="user">Utilisateur</option><option value="transporteur">Transporteur</option></select></div><div class="col-md-3"><button class="btn btn-premium w-100" onclick="addUser()"><i class="fas fa-user-plus"></i> Ajouter</button></div></div><div class="table-responsive"><table class="table table-premium"><thead><tr><th>Nom</th><th>Rôle</th><th>Actions</th><th>Permissions</th><th>Admin Actions</th></tr></thead><tbody id="usersTableBody"></tbody></table></div></div></div></div>
     </div>
+
+    <!-- MODALS -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5>🔐 Changer mot de passe</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="passwordUserId"><div class="mb-3"><label>Nouveau mot de passe</label><input type="password" id="newUserPasswordModal" class="form-control"></div><div class="mb-3"><label>Confirmer</label><input type="password" id="confirmUserPasswordModal" class="form-control"></div><button class="btn btn-premium w-100" onclick="saveNewPassword()">Enregistrer</button></div></div></div></div>
+    <div class="modal fade" id="changeMyPasswordModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5>🔐 Changer mon mot de passe</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label>Ancien mot de passe</label><input type="password" id="oldPasswordInput" class="form-control"></div><div class="mb-3"><label>Nouveau mot de passe</label><input type="password" id="myNewPasswordInput" class="form-control"></div><div class="mb-3"><label>Confirmer</label><input type="password" id="myConfirmPasswordInput" class="form-control"></div><button class="btn btn-premium w-100" onclick="saveMyNewPassword()">Enregistrer</button></div></div></div></div>
+    <div class="modal fade" id="permissionsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5>🔐 Gérer les permissions</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="permissionsUserId"><div class="mb-3"><span class="fw-bold">Utilisateur: <span id="permissionsUserName"></span></span></div><hr><h6>📋 Actions</h6><div class="form-check"><input class="form-check-input" type="checkbox" id="permAjouterCommande"><label class="form-check-label">➕ Ajouter commande</label></div><div class="form-check"><input class="form-check-input" type="checkbox" id="permAjouterRealisation"><label class="form-check-label">🚛 Ajouter réalisation</label></div><div class="form-check"><input class="form-check-input" type="checkbox" id="permValiderDemandes"><label class="form-check-label">✅ Valider demandes</label></div><div class="form-check"><input class="form-check-input" type="checkbox" id="permAnnulerRealisation"><label class="form-check-label">❌ Annuler réalisation</label></div><div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirDashboard"><label class="form-check-label">📊 Voir dashboard</label></div><hr><h6>📑 Onglets visibles</h6><div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirDemandes"><label class="form-check-label">📋 Demandes clients</label></div><div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirRegister"><label class="form-check-label">📝 Enregistrement</label></div><div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirToday"><label class="form-check-label">📅 Commandes du jour</label></div><div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirPending"><label class="form-check-label">⏳ En instance & Retard</label></div><div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirClients"><label class="form-check-label">👥 Base clients</label></div><div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirUsers"><label class="form-check-label">👥 Gestion utilisateurs</label></div><div class="form-check"><input class="form-check-input" type="checkbox" id="permVoirClientSpace"><label class="form-check-label">👤 Mon espace client</label></div><hr><button class="btn btn-premium w-100" onclick="savePermissions()">Enregistrer</button></div></div></div></div>
+    <div class="modal fade" id="clientDetailModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5>Détail des livraisons</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="clientDetailBody"></div></div></div></div>
+    <div class="modal fade" id="nouvelleCommandeModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="background:var(--card-bg);"><div class="modal-header"><h5>📝 Nouvelle demande de commande</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="clientCommandeForm"><div class="mb-3"><label>Code Client</label><input type="text" id="clientCmdCode" class="form-control" readonly></div><div class="mb-3"><label>Produit</label><select id="clientCmdProduit" class="form-select"><option>Gasoil</option><option>Sans Plomb</option></select></div><div class="mb-3"><label>Nombre de citernes</label><input type="number" id="clientCmdNbCiternes" class="form-control" min="1" required oninput="document.getElementById('clientCmdQuantite').value = (this.value * 27) + ' m³'"></div><div class="mb-3"><label>Quantité (m³)</label><input type="text" id="clientCmdQuantite" class="form-control" readonly></div><div class="mb-3"><label>Destination</label><input type="text" id="clientCmdDestination" class="form-control" required></div><div class="alert alert-warning small">⚠️ Cette demande sera examinée par nos équipes.</div><button type="submit" class="btn btn-premium w-100">📨 Envoyer la demande</button></form></div></div></div></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -369,179 +195,223 @@
         appId: "1:793589485216:web:c09eed21df0d924966c3c5"
     };
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    const db = firebase.database();
 
+    // ============ GLOBAL VARIABLES ============
     let clientsDB = [], usersDB = [], demandesClient = [], commandes = [], realisations = [], notifications = [];
     let currentUserRole = null, currentUserName = null, currentUserId = null, currentClientCode = null, selectedCommandeIdForReal = null;
     let currentUserPermissions = null;
     let savedLogo = localStorage.getItem('naftalLogo');
-    
+    let dataReady = false;
+
+    // Helper hash
+    function hashPassword(pwd) { return CryptoJS.SHA256("NAFTAL_SALT_" + pwd).toString(); }
+
     const defaultPermissions = {
         admin: { ajouterCommande: true, ajouterRealisation: true, validerDemandes: true, annulerRealisation: true, voirDashboard: true, voirDemandes: true, voirRegister: true, voirToday: true, voirPending: true, voirClients: true, voirUsers: true, voirClientSpace: true },
         user: { ajouterCommande: true, ajouterRealisation: true, validerDemandes: true, annulerRealisation: false, voirDashboard: true, voirDemandes: true, voirRegister: true, voirToday: true, voirPending: true, voirClients: false, voirUsers: false, voirClientSpace: false },
         transporteur: { ajouterCommande: false, ajouterRealisation: false, validerDemandes: false, annulerRealisation: false, voirDashboard: true, voirDemandes: false, voirRegister: false, voirToday: true, voirPending: true, voirClients: false, voirUsers: false, voirClientSpace: false }
     };
 
-    function initFirebaseData() {
-        database.ref('clients').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if(data) clientsDB = Object.entries(data).map(([id, value]) => ({ id, ...value }));
-            else [{ code: 'CL001', nom: 'SARL Transport' }, { code: 'CL002', nom: 'Entreprise Benali' }, { code: 'CL003', nom: 'Logistique Sud' }, { code: 'E2206', nom: 'ENTP' }].forEach(c => database.ref('clients').push(c));
-            renderAll();
-        });
-        database.ref('users').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if(data) usersDB = Object.entries(data).map(([id, value]) => ({ id, ...value }));
-            else [{ username: 'admin', password: 'admin123', role: 'admin', permissions: defaultPermissions.admin }, { username: 'user', password: 'user123', role: 'user', permissions: defaultPermissions.user }, { username: 'transporteur', password: 'trans123', role: 'transporteur', permissions: defaultPermissions.transporteur }].forEach(u => database.ref('users').push(u));
-            renderUsersTable();
-        });
-        database.ref('demandesClient').on('value', (snapshot) => { demandesClient = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]) => ({ id, ...v })) : []; renderAll(); });
-        database.ref('commandes').on('value', (snapshot) => { commandes = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]) => ({ id, ...v })) : []; renderAll(); });
-        database.ref('realisations').on('value', (snapshot) => { realisations = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]) => ({ id, ...v })) : []; renderAll(); });
-        database.ref('notifications').on('value', (snapshot) => { notifications = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]) => ({ id, ...v })) : []; updateNotificationBell(); });
+    // ============ INITIALISATION PROPRE ============
+    async function resetAndInitData() {
+        // Vérifier et créer les clients par défaut
+        const clientsSnap = await db.ref('clients').once('value');
+        if(!clientsSnap.exists()) {
+            await db.ref('clients').push({ code: 'CL001', nom: 'SARL Transport' });
+            await db.ref('clients').push({ code: 'CL002', nom: 'Entreprise Benali' });
+            await db.ref('clients').push({ code: 'CL003', nom: 'Logistique Sud' });
+        }
+        
+        // Vérifier et corriger les utilisateurs
+        const usersSnap = await db.ref('users').once('value');
+        const defaultUsers = [
+            { username: 'admin', password: 'admin123', role: 'admin', perms: defaultPermissions.admin },
+            { username: 'user', password: 'user123', role: 'user', perms: defaultPermissions.user },
+            { username: 'transporteur', password: 'trans123', role: 'transporteur', perms: defaultPermissions.transporteur }
+        ];
+        
+        if(!usersSnap.exists()) {
+            // Créer les utilisateurs par défaut
+            for(const u of defaultUsers) {
+                await db.ref('users').push({
+                    username: u.username,
+                    password: hashPassword(u.password),
+                    role: u.role,
+                    permissions: u.perms
+                });
+            }
+        } else {
+            // Mettre à jour les mots de passe si non hashés (longueur < 60 ou ne commence pas par '...')
+            const usersList = [];
+            usersSnap.forEach(child => { usersList.push({ id: child.key, ...child.val() }); });
+            for(const u of usersList) {
+                const pwd = u.password;
+                const isHashed = pwd && pwd.length === 64 && /^[a-f0-9]+$/i.test(pwd);
+                if(!isHashed) {
+                    // Chercher le mot de passe en clair correspondant
+                    const found = defaultUsers.find(d => d.username === u.username);
+                    if(found) {
+                        await db.ref(`users/${u.id}`).update({ password: hashPassword(found.password) });
+                        console.log(`Mot de passe mis à jour pour ${u.username}`);
+                    }
+                }
+            }
+        }
+        
+        // Supprimer les éventuelles commandes/réalisations/demandes si on veut vraiment une base vide
+        // (optionnel - décommenter si vous voulez absolument tout supprimer au démarrage)
+        // await db.ref('commandes').remove();
+        // await db.ref('realisations').remove();
+        // await db.ref('demandesClient').remove();
+        // await db.ref('notifications').remove();
     }
 
-    function loadSavedLogo() { const d = document.getElementById('logoDisplay'); if(savedLogo && d) d.innerHTML = `<img src="${savedLogo}" class="naftal-logo-img">`; }
-    function addLogoManually() { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = e => { const f = e.target.files[0]; if(f) { const r = new FileReader(); r.onload = ev => { localStorage.setItem('naftalLogo', ev.target.result); savedLogo = ev.target.result; document.getElementById('logoDisplay').innerHTML = `<img src="${ev.target.result}" class="naftal-logo-img">`; showToast('✅ Logo ajouté!'); }; r.readAsDataURL(f); } }; i.click(); }
-    
-    function getCurrentDateTime() { const n = new Date(); return { date: n.toLocaleDateString('fr-FR'), heure: n.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }), timestamp: n.getTime() }; }
-    function showToast(m, t='success') { Toastify({ text: m, duration: 2500, gravity: "top", position: "right", style: { background: t==='success' ? '#10b981' : '#ef4444', borderRadius:'14px' } }).showToast(); }
-    function updateNotificationBell() { let c = notifications.filter(n => !n.read && n.targetRole !== 'client').length; let b = document.getElementById('notificationCount'); if(c > 0) { b.innerText = c; b.style.display = 'flex'; } else b.style.display = 'none'; }
-    function addNotification(m, t='info', tr=null) { database.ref('notifications').push({ message: m, type: t, targetRole: tr, read: false, date: new Date().toLocaleString(), timestamp: Date.now() }); showToast(m, t); }
-    function showNotifications() { let l = notifications.filter(n => !n.read && n.targetRole !== 'client'); if(l.length === 0) { showToast('Aucune notification', 'info'); return; } let h = '<div class="list-group">'; l.forEach(n => { h += `<div class="list-group-item"><small>${n.date}</small><br>${n.message}</div>`; database.ref(`notifications/${n.id}`).update({ read: true }); }); h += '</div>'; Swal.fire({ title: 'Notifications', html: h, icon: 'info', confirmButtonColor: '#4f46e5' }); }
-    
-    function hasPermission(p) { if(currentUserRole === 'admin') return true; return currentUserPermissions && currentUserPermissions[p] === true; }
-    function calculerDelaiPrecis(ct, rt) { let d = rt - ct; if(d <= 0) return '0s'; let s = Math.floor(d/1000), m = Math.floor(s/60), h = Math.floor(m/60), j = Math.floor(h/24); s %= 60; m %= 60; h %= 24; let parts = []; if(j>0) parts.push(`${j}j`); if(h>0) parts.push(`${h}h`); if(m>0) parts.push(`${m}m`); if(s>0) parts.push(`${s}s`); return parts.join(' ') || '0s'; }
-    
-    async function checkPendingAndConfirm(cc) { let p = commandes.filter(c => c.codeClient === cc && getRealiseByCommande(c.id) < c.quantite); if(p.length === 0) return 'add'; const r = await Swal.fire({ title: '⚠️ Commande en instance', text: `Ce client a ${p.length} commande(s) non soldée(s). Que faire ?`, icon: 'question', showCancelButton: true, confirmButtonText: '🗑️ Supprimer ancienne + Nouvelle', cancelButtonText: '📦 Garder + Ajouter nouvelle' }); if(r.isConfirmed) { for(let o of p) { database.ref(`commandes/${o.id}`).remove(); realisations.filter(rr => rr.commandeId === o.id).forEach(rr => database.ref(`realisations/${rr.id}`).remove()); } addNotification(`🗑️ Anciennes commandes de ${cc} supprimées`, 'warning', 'admin'); return 'add'; } return 'add'; }
-    
-    function updateYesterdayDashboard() { let y = new Date(); y.setDate(y.getDate()-1); let ys = y.toLocaleDateString('fr-FR'); document.getElementById('yesterdayDate').innerText = ys; let yc = commandes.filter(c => c.date === ys); let yh = ''; if(yc.length === 0) yh = '<tr><td colspan="6" class="text-center">Aucune commande pour cette date</td></tr>'; else yc.forEach(cmd => { let r = getRealiseByCommande(cmd.id); let p = (r/cmd.quantite)*100; yh += `<tr><td><strong>${cmd.client}</strong></td><td>${cmd.codeClient}</td><td>${cmd.produit}</td><td>${cmd.quantite} m³</td><td class="text-success fw-bold">${r} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td></tr>`; }); document.getElementById('yesterdayTableBody').innerHTML = yh; }
-    
-    function getClientNameByCode(code) { let c = clientsDB.find(c => c.code === code); return c ? c.nom : ''; }
-    function updateClientSelect() { let l = document.getElementById('clientsCodeList'); if(l) l.innerHTML = clientsDB.map(c => `<option value="${c.code}">${c.code} - ${c.nom}</option>`).join(''); }
+    // Attacher les listeners après l'initialisation
+    async function attachFirebaseListeners() {
+        db.ref('clients').on('value', (snap) => { clientsDB = snap.val() ? Object.entries(snap.val()).map(([id,v])=>({id,...v})) : []; renderAll(); });
+        db.ref('users').on('value', (snap) => { usersDB = snap.val() ? Object.entries(snap.val()).map(([id,v])=>({id,...v})) : []; renderUsersTable(); });
+        db.ref('demandesClient').on('value', (snap) => { demandesClient = snap.val() ? Object.entries(snap.val()).map(([id,v])=>({id,...v})) : []; renderAll(); });
+        db.ref('commandes').on('value', (snap) => { commandes = snap.val() ? Object.entries(snap.val()).map(([id,v])=>({id,...v})) : []; renderAll(); });
+        db.ref('realisations').on('value', (snap) => { realisations = snap.val() ? Object.entries(snap.val()).map(([id,v])=>({id,...v})) : []; renderAll(); });
+        db.ref('notifications').on('value', (snap) => { notifications = snap.val() ? Object.entries(snap.val()).map(([id,v])=>({id,...v})) : []; updateNotificationBell(); });
+        // Une fois tous les listeners actifs, on peut permettre la connexion
+        dataReady = true;
+        document.getElementById('loginBtn').disabled = false;
+    }
+
+    // ============ AUTRES FONCTIONS (inchangées mais raccourcies pour lisibilité) ============
+    function getCurrentDateTime() { const n=new Date(); return { date:n.toLocaleDateString('fr-FR'), heure:n.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}), timestamp:n.getTime() }; }
+    function showToast(m,t='success') { Toastify({ text:m, duration:2500, gravity:"top", position:"right", style:{ background:t==='success'?'#10b981':'#ef4444', borderRadius:'14px' } }).showToast(); }
+    function updateNotificationBell() { let c=notifications.filter(n=>!n.read && n.targetRole!=='client').length; let b=document.getElementById('notificationCount'); if(c>0) { b.innerText=c; b.style.display='flex'; } else b.style.display='none'; }
+    function addNotification(m,t='info',tr=null) { db.ref('notifications').push({ message:m, type:t, targetRole:tr, read:false, date:new Date().toLocaleString(), timestamp:Date.now() }); showToast(m,t); }
+    function showNotifications() { let l=notifications.filter(n=>!n.read && n.targetRole!=='client'); if(l.length===0) { showToast('Aucune notification','info'); return; } let h='<div class="list-group">'; l.forEach(n=>{ h+=`<div class="list-group-item"><small>${escapeHtml(n.date)}</small><br>${escapeHtml(n.message)}</div>`; db.ref(`notifications/${n.id}`).update({read:true}); }); h+='</div>'; Swal.fire({ title:'Notifications', html:h, icon:'info', confirmButtonColor:'#4f46e5' }); }
+    function hasPermission(p) { if(currentUserRole==='admin') return true; return currentUserPermissions && currentUserPermissions[p]===true; }
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m) { if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m; }); }
+    function getRealiseByCommande(cmdId) { return realisations.filter(r=>r.commandeId===cmdId).reduce((s,r)=>s+r.quantite,0); }
+    function getRealisationsByCommande(cmdId) { return realisations.filter(r=>r.commandeId===cmdId); }
+    function isCommandeRetardee(cmd) { let cd=new Date(cmd.timestamp), td=new Date(); td.setHours(0,0,0,0); let r=getRealiseByCommande(cmd.id); return (cd<td && r<cmd.quantite); }
+    function getClientNameByCode(code) { let c=clientsDB.find(c=>c.code===code); return c ? c.nom : ''; }
+    function updateClientSelect() { let list=document.getElementById('clientsCodeList'); if(list) list.innerHTML=clientsDB.map(c=>`<option value="${escapeHtml(c.code)}">${escapeHtml(c.code)} - ${escapeHtml(c.nom)}</option>`).join(''); }
     document.getElementById('cmdCodeClient')?.addEventListener('input', function() { document.getElementById('cmdClient').value = getClientNameByCode(this.value) || ''; });
-    document.getElementById('clientCmdNbCiternes')?.addEventListener('input', function() { document.getElementById('clientCmdQuantite').value = (parseInt(this.value)||0) * 27 + ' m³'; });
-    
-    function addClient() { if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error'); let c = document.getElementById('newClientCode').value.trim(), n = document.getElementById('newClientName').value.trim(); if(!c||!n) return showToast('Champs requis','error'); if(clientsDB.find(cx => cx.code === c)) return showToast('Code existe','error'); database.ref('clients').push({ code: c, nom: n }); showToast('Client ajouté'); document.getElementById('newClientCode').value = ''; document.getElementById('newClientName').value = ''; }
-    function deleteClient(id, code) { if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error'); if(commandes.some(c => c.codeClient === code)) return showToast('Ce client a des commandes','error'); database.ref(`clients/${id}`).remove(); showToast('Client supprimé'); }
-    function renderClientsTable() { let h = ''; clientsDB.forEach(c => { h += `<tr><td><strong>${c.code}</strong></td><td>${c.nom}</td><td>${currentUserRole === 'admin' ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteClient('${c.id}', '${c.code}')"><i class="fas fa-trash"></i> Supprimer</button>` : '—'}</td></tr>`; }); if(document.getElementById('clientsTableBody')) document.getElementById('clientsTableBody').innerHTML = h; }
-    
-    function demanderRappel() { let cc = currentClientCode; if(!cc) { showToast('Code client non trouvé', 'error'); return; } let ccmd = commandes.find(c => c.codeClient === cc && getRealiseByCommande(c.id) < c.quantite); if(!ccmd) { showToast('📭 Aucune commande en retard', 'info'); return; } addNotification(`📢 Client ${cc} (${getClientNameByCode(cc)}) demande un rappel pour commande non soldée`, 'warning', 'admin'); addNotification(`📢 Client ${cc} demande un rappel`, 'warning', 'user'); showToast('✅ Rappel envoyé'); }
-    function showNouvelleCommandeClient() { let cc = currentClientCode; if(!cc) { showToast('Code client non trouvé', 'error'); return; } document.getElementById('clientCmdCode').value = cc; document.getElementById('clientCmdQuantite').value = ''; document.getElementById('clientCmdNbCiternes').value = ''; document.getElementById('clientCmdDestination').value = ''; new bootstrap.Modal(document.getElementById('nouvelleCommandeModal')).show(); }
-    document.getElementById('clientCommandeForm')?.addEventListener('submit', function(e) { e.preventDefault(); let cc = document.getElementById('clientCmdCode').value, cn = getClientNameByCode(cc), nb = parseInt(document.getElementById('clientCmdNbCiternes').value), now = getCurrentDateTime(); if(!nb || nb <= 0) return showToast('Nombre de citernes invalide', 'error'); database.ref('demandesClient').push({ date: now.date, heure: now.heure, timestamp: now.timestamp, codeClient: cc, client: cn, produit: document.getElementById('clientCmdProduit').value, nbCiternes: nb, quantite: nb*27, destination: document.getElementById('clientCmdDestination').value, createdBy: cn, status: 'en_attente' }); addNotification(`🆕 Demande commande de ${cn} (${cc}) - ${nb*27} m³ en attente`, 'success', 'admin'); addNotification(`🆕 Commande de ${cn} à valider`, 'success', 'user'); showToast('✅ Demande envoyée'); bootstrap.Modal.getInstance(document.getElementById('nouvelleCommandeModal')).hide(); renderAll(); });
-    
-    function filtrerClientData() { let cc = currentClientCode; if(!cc) return; document.getElementById('clientFilterCode').value = cc; let ccms = commandes.filter(c => c.codeClient === cc); if(ccms.length === 0) { document.getElementById('clientDataContainer').innerHTML = '<div class="alert alert-info text-center">📭 Aucune commande trouvée</div>'; return; } let h = ''; ccms.forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100, s = rt<=0 ? '<span class="badge-soldee">✅ Soldée</span>' : (isCommandeRetardee(cmd) ? '<span class="badge-retard">⚠️ En retard</span>' : '<span class="badge-non-soldee">⏳ Non soldée</span>'); let dels = getRealisationsByCommande(cmd.id); let dl = dels.length > 0 ? dels.map(d => `<div>🚛 FR:${d.fr} | Chauffeur:${d.chauffeur} | ${d.quantite}m³ | ${d.date} ${d.heure}</div>`).join('') : '<div class="text-muted">📭 Aucune livraison</div>'; h += `<div class="card mb-3 p-3"><div class="d-flex justify-content-between"><strong>📅 ${cmd.date} à ${cmd.heure}</strong> ${s}</div><div>⛽ ${cmd.produit} | 🚛 ${cmd.nbCiternes} citernes | 📦 ${cmd.quantite} m³</div><div class="progress-custom my-2"><div class="progress-fill" style="width:${p}%"></div></div><div>✅ Réalisé: ${r} m³ | ⚠️ Restant: ${rt} m³</div><div class="mt-2"><strong>📋 Livraisons:</strong><br>${dl}</div><div class="mt-1 small text-muted">📝 Validé par: ${cmd.validePar || 'admin'} le ${cmd.valideLe || cmd.date}</div></div>`; }); document.getElementById('clientDataContainer').innerHTML = h; }
-    
-    function validerDemande(id) { if(!hasPermission('validerDemandes')) return showToast('Permission refusée', 'error'); let d = demandesClient.find(d => d.id === id); if(!d) return; Swal.fire({ title: '✅ Valider', text: `Valider la commande de ${d.client} ?`, icon: 'question', showCancelButton: true, confirmButtonText: 'Oui', cancelButtonText: 'Non' }).then(res => { if(res.isConfirmed) { let now = getCurrentDateTime(); database.ref('commandes').push({ date: now.date, heure: now.heure, timestamp: now.timestamp, codeClient: d.codeClient, client: d.client, produit: d.produit, nbCiternes: d.nbCiternes, quantite: d.quantite, destination: d.destination, createdBy: `${d.createdBy} → ${currentUserName}`, validePar: currentUserName, valideLe: new Date().toLocaleString() }); database.ref(`demandesClient/${id}`).remove(); addNotification(`✅ Commande ${d.client} validée par ${currentUserName}`, 'success', 'admin'); addNotification(`✅ Commande ${d.client} validée`, 'success', 'user'); showToast('Demande validée'); renderAll(); } }); }
-    function refuserDemande(id) { if(!hasPermission('validerDemandes')) return showToast('Permission refusée', 'error'); let d = demandesClient.find(d => d.id === id); if(!d) return; Swal.fire({ title: '❌ Refuser', text: `Refuser la commande de ${d.client} ?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Oui', cancelButtonColor: '#ef4444' }).then(res => { if(res.isConfirmed) { database.ref(`demandesClient/${id}`).remove(); addNotification(`❌ Commande ${d.client} refusée`, 'error', 'admin'); showToast('Demande refusée'); renderAll(); } }); }
-    
-    function addUser() { if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error'); let u = document.getElementById('newUsername').value.trim(), p = document.getElementById('newUserPassword').value, r = document.getElementById('newUserRole').value; if(!u||!p) return showToast('Nom et mot de passe requis','error'); if(usersDB.find(x => x.username === u)) return showToast('Nom existe','error'); let perms = r === 'user' ? {...defaultPermissions.user} : {...defaultPermissions.transporteur}; database.ref('users').push({ username: u, password: p, role: r, permissions: perms }); showToast(`Utilisateur ${u} ajouté`); document.getElementById('newUsername').value = ''; document.getElementById('newUserPassword').value = ''; }
-    function deleteUser(id, un) { if(currentUserRole !== 'admin') return showToast('Permission refusée', 'error'); if(un === 'admin') return showToast('Impossible', 'error'); database.ref(`users/${id}`).remove(); showToast('Utilisateur supprimé'); }
-    function openChangePassword(id, un) { document.getElementById('passwordUserId').value = id; document.getElementById('newUserPasswordModal').value = ''; document.getElementById('confirmUserPasswordModal').value = ''; new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); }
-    function saveNewPassword() { let id = document.getElementById('passwordUserId').value, np = document.getElementById('newUserPasswordModal').value.trim(), cp = document.getElementById('confirmUserPasswordModal').value.trim(); if(!np) return showToast('Mot de passe requis','error'); if(np !== cp) return showToast('Les mots de passe ne correspondent pas','error'); database.ref(`users/${id}`).update({ password: np }); showToast('Mot de passe mis à jour'); bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide(); }
-    
-    function openChangeMyPassword() { 
-        if(currentUserRole === 'transporteur') { showToast('Les transporteurs ne peuvent pas changer leur mot de passe', 'error'); return; }
-        document.getElementById('oldPasswordInput').value = ''; document.getElementById('myNewPasswordInput').value = ''; document.getElementById('myConfirmPasswordInput').value = ''; new bootstrap.Modal(document.getElementById('changeMyPasswordModal')).show(); 
+    document.getElementById('cmdNbCiternes')?.addEventListener('input', function(){ let nb=parseInt(this.value)||0; document.getElementById('cmdQuantite').value = (nb*27)+' m³'; });
+    document.getElementById('clientCmdNbCiternes')?.addEventListener('input', function() { document.getElementById('clientCmdQuantite').value = (parseInt(this.value)||0)*27+' m³'; });
+    async function checkPendingAndConfirm(cc) { let p=commandes.filter(c=>c.codeClient===cc && getRealiseByCommande(c.id)<c.quantite); if(p.length===0) return 'add'; const r=await Swal.fire({ title:'⚠️ Commande en instance', text:`Ce client a ${p.length} commande(s) non soldée(s). Que faire ?`, icon:'question', showCancelButton:true, confirmButtonText:'🗑️ Supprimer ancienne + Nouvelle', cancelButtonText:'📦 Garder + Ajouter nouvelle' }); if(r.isConfirmed) { for(let o of p){ db.ref(`commandes/${o.id}`).remove(); realisations.filter(rr=>rr.commandeId===o.id).forEach(rr=>db.ref(`realisations/${rr.id}`).remove()); } addNotification(`🗑️ Anciennes commandes de ${cc} supprimées`,'warning','admin'); } return 'add'; }
+    function resetCommandeForm() { document.getElementById('commandeForm').reset(); document.getElementById('cmdQuantite').value=''; let n=getCurrentDateTime(); document.getElementById('cmdDate').value=n.date; document.getElementById('cmdHeure').value=n.heure; document.getElementById('cmdClient').value=''; showToast('Formulaire réinitialisé'); }
+    function validerDemande(id) { if(!hasPermission('validerDemandes')) return showToast('Permission refusée','error'); let d=demandesClient.find(d=>d.id===id); if(!d) return; Swal.fire({ title:'✅ Valider', text:`Valider la commande de ${d.client} ?`, icon:'question', showCancelButton:true }).then(res=>{ if(res.isConfirmed) { let now=getCurrentDateTime(); db.ref('commandes').push({ date:now.date, heure:now.heure, timestamp:now.timestamp, codeClient:d.codeClient, client:d.client, produit:d.produit, nbCiternes:d.nbCiternes, quantite:d.quantite, destination:d.destination, createdBy:`${d.createdBy} → ${currentUserName}`, validePar:currentUserName, valideLe:new Date().toLocaleString() }); db.ref(`demandesClient/${id}`).remove(); addNotification(`✅ Commande ${d.client} validée par ${currentUserName}`,'success','admin'); showToast('Demande validée'); renderAll(); } }); }
+    function refuserDemande(id) { if(!hasPermission('validerDemandes')) return showToast('Permission refusée','error'); let d=demandesClient.find(d=>d.id===id); if(!d) return; Swal.fire({ title:'❌ Refuser', text:`Refuser la commande de ${d.client} ?`, icon:'warning', showCancelButton:true }).then(res=>{ if(res.isConfirmed) { db.ref(`demandesClient/${id}`).remove(); addNotification(`❌ Commande ${d.client} refusée`,'error','admin'); showToast('Demande refusée'); renderAll(); } }); }
+    function addClient() { if(currentUserRole!=='admin') return showToast('Permission refusée','error'); let c=document.getElementById('newClientCode').value.trim(), n=document.getElementById('newClientName').value.trim(); if(!c||!n) return showToast('Champs requis','error'); if(clientsDB.find(cx=>cx.code===c)) return showToast('Code existe','error'); db.ref('clients').push({ code:c, nom:n }); showToast('Client ajouté'); document.getElementById('newClientCode').value=''; document.getElementById('newClientName').value=''; }
+    function deleteClient(id,code) { if(currentUserRole!=='admin') return showToast('Permission refusée','error'); if(commandes.some(c=>c.codeClient===code)) return showToast('Ce client a des commandes','error'); db.ref(`clients/${id}`).remove(); showToast('Client supprimé'); }
+    function addUser() { if(currentUserRole!=='admin') return showToast('Permission refusée','error'); let u=document.getElementById('newUsername').value.trim(), p=document.getElementById('newUserPassword').value, r=document.getElementById('newUserRole').value; if(!u||!p) return showToast('Nom et mot de passe requis','error'); if(usersDB.find(x=>x.username===u)) return showToast('Nom existe','error'); let perms=r==='user'?{...defaultPermissions.user}:{...defaultPermissions.transporteur}; db.ref('users').push({ username:u, password:hashPassword(p), role:r, permissions:perms }); showToast(`Utilisateur ${u} ajouté`); document.getElementById('newUsername').value=''; document.getElementById('newUserPassword').value=''; }
+    function deleteUser(id,un) { if(currentUserRole!=='admin') return showToast('Permission refusée','error'); if(un==='admin') return showToast('Impossible','error'); db.ref(`users/${id}`).remove(); showToast('Utilisateur supprimé'); }
+    function openChangePassword(id,un) { document.getElementById('passwordUserId').value=id; document.getElementById('newUserPasswordModal').value=''; document.getElementById('confirmUserPasswordModal').value=''; new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); }
+    function saveNewPassword() { let id=document.getElementById('passwordUserId').value, np=document.getElementById('newUserPasswordModal').value.trim(), cp=document.getElementById('confirmUserPasswordModal').value.trim(); if(!np) return showToast('Mot de passe requis','error'); if(np!==cp) return showToast('Les mots de passe ne correspondent pas','error'); db.ref(`users/${id}`).update({ password:hashPassword(np) }); showToast('Mot de passe mis à jour'); bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide(); }
+    function openChangeMyPassword() { if(currentUserRole==='transporteur') { showToast('Les transporteurs ne peuvent pas changer leur mot de passe','error'); return; } document.getElementById('oldPasswordInput').value=''; document.getElementById('myNewPasswordInput').value=''; document.getElementById('myConfirmPasswordInput').value=''; new bootstrap.Modal(document.getElementById('changeMyPasswordModal')).show(); }
+    function saveMyNewPassword() { let old=document.getElementById('oldPasswordInput').value.trim(), np=document.getElementById('myNewPasswordInput').value.trim(), cp=document.getElementById('myConfirmPasswordInput').value.trim(); if(!old) return showToast('Ancien mot de passe requis','error'); if(!np) return showToast('Nouveau mot de passe requis','error'); if(np!==cp) return showToast('Les mots de passe ne correspondent pas','error'); let u=usersDB.find(u=>u.id===currentUserId); if(!u || u.password!==hashPassword(old)) return showToast('Ancien mot de passe incorrect','error'); db.ref(`users/${currentUserId}`).update({ password:hashPassword(np) }); showToast('Mot de passe mis à jour'); bootstrap.Modal.getInstance(document.getElementById('changeMyPasswordModal')).hide(); }
+    function openPermissionsModal(uid,un,perms) { document.getElementById('permissionsUserId').value=uid; document.getElementById('permissionsUserName').innerText=un; document.getElementById('permAjouterCommande').checked=perms.ajouterCommande||false; document.getElementById('permAjouterRealisation').checked=perms.ajouterRealisation||false; document.getElementById('permValiderDemandes').checked=perms.validerDemandes||false; document.getElementById('permAnnulerRealisation').checked=perms.annulerRealisation||false; document.getElementById('permVoirDashboard').checked=perms.voirDashboard||false; document.getElementById('permVoirDemandes').checked=perms.voirDemandes||false; document.getElementById('permVoirRegister').checked=perms.voirRegister||false; document.getElementById('permVoirToday').checked=perms.voirToday||false; document.getElementById('permVoirPending').checked=perms.voirPending||false; document.getElementById('permVoirClients').checked=perms.voirClients||false; document.getElementById('permVoirUsers').checked=perms.voirUsers||false; document.getElementById('permVoirClientSpace').checked=perms.voirClientSpace||false; new bootstrap.Modal(document.getElementById('permissionsModal')).show(); }
+    function savePermissions() { let uid=document.getElementById('permissionsUserId').value; let np={ ajouterCommande:document.getElementById('permAjouterCommande').checked, ajouterRealisation:document.getElementById('permAjouterRealisation').checked, validerDemandes:document.getElementById('permValiderDemandes').checked, annulerRealisation:document.getElementById('permAnnulerRealisation').checked, voirDashboard:document.getElementById('permVoirDashboard').checked, voirDemandes:document.getElementById('permVoirDemandes').checked, voirRegister:document.getElementById('permVoirRegister').checked, voirToday:document.getElementById('permVoirToday').checked, voirPending:document.getElementById('permVoirPending').checked, voirClients:document.getElementById('permVoirClients').checked, voirUsers:document.getElementById('permVoirUsers').checked, voirClientSpace:document.getElementById('permVoirClientSpace').checked }; db.ref(`users/${uid}`).update({ permissions:np }); showToast('Permissions mises à jour'); bootstrap.Modal.getInstance(document.getElementById('permissionsModal')).hide(); }
+    function deleteRealisation(rid) { if(!hasPermission('annulerRealisation')) return showToast('Permission refusée','error'); Swal.fire({ title:'Confirmation', text:'Annuler cette réalisation?', icon:'warning', showCancelButton:true }).then(res=>{ if(res.isConfirmed) { db.ref(`realisations/${rid}`).remove(); showToast('Réalisation annulée'); renderAll(); } }); }
+    function deleteCommande(cid) { if(currentUserRole!=='admin') return showToast('Seul admin peut supprimer','error'); Swal.fire({ title:'Confirmation', text:'Supprimer cette commande?', icon:'warning', showCancelButton:true }).then(res=>{ if(res.isConfirmed) { db.ref(`commandes/${cid}`).remove(); realisations.filter(r=>r.commandeId===cid).forEach(r=>db.ref(`realisations/${r.id}`).remove()); showToast('Commande supprimée'); renderAll(); } }); }
+    function afficherDetailClient(cn,cc) { let rc=realisations.filter(r=>{ let c=commandes.find(c=>c.id===r.commandeId); return c && c.client===cn; }); let h=`<h6>Client: ${escapeHtml(cn)} (${escapeHtml(cc)})</h6><table class="table table-sm"><thead><tr><th>FR</th><th>Chauffeur</th><th>Qté</th><th>Date réalisation</th><th>Heure</th><th>Délai</th><th>Par</th></tr></thead><tbody>`; rc.forEach(r=>{ let c=commandes.find(c=>c.id===r.commandeId); let d=c?calculerDelaiPrecis(c.timestamp,r.timestamp):'-'; h+=`<tr><td><strong>${escapeHtml(r.fr)}</strong></td><td>${escapeHtml(r.chauffeur)}</td><td>${r.quantite} m³</td><td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.heure)}</td><td><span class="delai-badge">⏱️ ${d}</span></td><td>${escapeHtml(r.createdBy||'?')}</td></tr>`; }); h+=`</tbody></table>`; document.getElementById('clientDetailBody').innerHTML=h; new bootstrap.Modal(document.getElementById('clientDetailModal')).show(); }
+    function calculerDelaiPrecis(ct,rt) { let d=rt-ct; if(d<=0) return '0s'; let s=Math.floor(d/1000),m=Math.floor(s/60),h=Math.floor(m/60),j=Math.floor(h/24); s%=60; m%=60; h%=24; let parts=[]; if(j>0) parts.push(`${j}j`); if(h>0) parts.push(`${h}h`); if(m>0) parts.push(`${m}m`); if(s>0) parts.push(`${s}s`); return parts.join(' ')||'0s'; }
+    function demanderRappel() { let cc=currentClientCode; if(!cc) { showToast('Code client non trouvé','error'); return; } let ccmd=commandes.find(c=>c.codeClient===cc && getRealiseByCommande(c.id)<c.quantite); if(!ccmd) { showToast('📭 Aucune commande en retard','info'); return; } addNotification(`📢 Client ${cc} (${getClientNameByCode(cc)}) demande un rappel pour commande non soldée`,'warning','admin'); addNotification(`📢 Client ${cc} demande un rappel`,'warning','user'); showToast('✅ Rappel envoyé'); }
+    function showNouvelleCommandeClient() { let cc=currentClientCode; if(!cc) { showToast('Code client non trouvé','error'); return; } document.getElementById('clientCmdCode').value=cc; document.getElementById('clientCmdQuantite').value=''; document.getElementById('clientCmdNbCiternes').value=''; document.getElementById('clientCmdDestination').value=''; new bootstrap.Modal(document.getElementById('nouvelleCommandeModal')).show(); }
+    function filtrerClientData() { let cc=currentClientCode; if(!cc) return; document.getElementById('clientFilterCode').value=cc; let ccms=commandes.filter(c=>c.codeClient===cc); if(ccms.length===0) { document.getElementById('clientDataContainer').innerHTML='<div class="alert alert-info text-center">📭 Aucune commande trouvée pour ce client</div>'; return; } let h=''; ccms.forEach(cmd=>{ let r=getRealiseByCommande(cmd.id), rt=cmd.quantite-r, p=(r/cmd.quantite)*100, s=rt<=0?'<span class="badge-soldee">✅ Soldée</span>':(isCommandeRetardee(cmd)?'<span class="badge-retard">⚠️ En retard</span>':'<span class="badge-non-soldee">⏳ Non soldée</span>'); let dels=getRealisationsByCommande(cmd.id); let dl=dels.length>0?dels.map(d=>`<div>🚛 FR:${escapeHtml(d.fr)} | Chauffeur:${escapeHtml(d.chauffeur)} | ${d.quantite}m³ | ${escapeHtml(d.date)} ${escapeHtml(d.heure)}</div>`).join(''):'<div class="text-muted">📭 Aucune livraison</div>'; h+=`<div class="card mb-3 p-3"><div class="d-flex justify-content-between"><strong>📅 ${escapeHtml(cmd.date)} à ${escapeHtml(cmd.heure)}</strong> ${s}</div><div>⛽ ${escapeHtml(cmd.produit)} | 🚛 ${cmd.nbCiternes} citernes | 📦 ${cmd.quantite} m³</div><div class="progress-custom my-2"><div class="progress-fill" style="width:${p}%"></div></div><div>✅ Réalisé: ${r} m³ | ⚠️ Restant: ${rt} m³</div><div class="mt-2"><strong>📋 Livraisons:</strong><br>${dl}</div><div class="mt-1 small text-muted">📝 Validé par: ${escapeHtml(cmd.validePar)||'admin'} le ${escapeHtml(cmd.valideLe)||cmd.date}</div></div>`; }); document.getElementById('clientDataContainer').innerHTML=h; }
+    function renderCommandesListForRealisation() { let f=document.getElementById('filterCommandesList')?.value.toLowerCase()||''; let ns=commandes.filter(c=>getRealiseByCommande(c.id)<c.quantite); let fd=ns.filter(c=>c.client.toLowerCase().includes(f)||c.codeClient.toLowerCase().includes(f)); let ctr=document.getElementById('commandesListContainer'); if(!ctr) return; ctr.innerHTML=''; fd.forEach(cmd=>{ let r=getRealiseByCommande(cmd.id), rt=cmd.quantite-r, p=(r/cmd.quantite)*100; let cd=document.createElement('div'); cd.style.cssText='background:var(--bg-secondary);border-radius:16px;padding:12px;margin-bottom:10px;cursor:pointer;border:2px solid var(--border-color)'; if(selectedCommandeIdForReal===cmd.id) cd.style.borderColor='#dc2626'; cd.onclick=()=>{ document.querySelectorAll('.commande-card').forEach(c=>c.style.borderColor='var(--border-color)'); cd.style.borderColor='#dc2626'; selectedCommandeIdForReal=cmd.id; document.getElementById('realCmdId').value=cmd.id; let dd=document.getElementById('selectedCommandeDetail'); dd.style.display='block'; dd.innerHTML=`<strong>Client:</strong> ${escapeHtml(cmd.client)} (${escapeHtml(cmd.codeClient)})<br><strong>Restant:</strong> ${rt} m³ / ${cmd.quantite} m³<div class="progress-custom mt-2"><div class="progress-fill" style="width:${p}%"></div></div>`; showToast(`Commande sélectionnée: ${cmd.client}`); }; cd.className='commande-card'; cd.innerHTML=`<div><strong>${escapeHtml(cmd.client)}</strong> <small>${escapeHtml(cmd.codeClient)}</small></div><div>📦 ${cmd.quantite} m³ | ✅ ${r} m³ | ⚠️ ${rt} m³</div><div class="progress-custom mt-1"><div class="progress-fill" style="width:${p}%"></div></div><small>📍 ${escapeHtml(cmd.destination)} - ${cmd.date} ${cmd.heure}</small>`; ctr.appendChild(cd); }); if(fd.length===0) ctr.innerHTML='<div class="text-center p-3">Aucune commande en instance</div>'; }
+    function updateYesterdayDashboard() { let y=new Date(); y.setDate(y.getDate()-1); let ys=y.toLocaleDateString('fr-FR'); document.getElementById('yesterdayDate').innerText=ys; let yc=commandes.filter(c=>c.date===ys); let yh=''; if(yc.length===0) yh='<tr><td colspan="6" class="text-center">Aucune commande pour cette date</td></tr>'; else yc.forEach(cmd=>{ let r=getRealiseByCommande(cmd.id); let p=(r/cmd.quantite)*100; yh+=`<tr><td><strong>${escapeHtml(cmd.client)}</strong></td><td>${escapeHtml(cmd.codeClient)}</td><td>${escapeHtml(cmd.produit)}</td><td>${cmd.quantite} m³</td><td class="text-success fw-bold">${r} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td></tr>`; }); document.getElementById('yesterdayTableBody').innerHTML=yh; }
+    function renderTabs() { 
+        let tabs=[]; 
+        if(currentUserRole==='client') { if(hasPermission('voirClientSpace')) tabs.push({id:'client', name:'👤 Mon espace'}); } 
+        else if(currentUserRole==='transporteur') { if(hasPermission('voirToday')) tabs.push({id:'today', name:'📅 Commandes du jour'}); if(hasPermission('voirPending')) tabs.push({id:'pending', name:'⏳ En instance & Retard'}); } 
+        else { if(hasPermission('voirDemandes')) tabs.push({id:'demandes', name:'📋 Demandes clients'}); if(hasPermission('voirRegister')) tabs.push({id:'register', name:'📝 Enregistrement'}); if(hasPermission('voirToday')) tabs.push({id:'today', name:'📅 Commandes du jour'}); if(hasPermission('voirPending')) tabs.push({id:'pending', name:'⏳ En instance & Retard'}); if(hasPermission('voirClients')) tabs.push({id:'clients', name:'👥 Base clients'}); if(hasPermission('voirUsers')) tabs.push({id:'users', name:'👥 Gestion utilisateurs'}); } 
+        let html=tabs.map((t,i)=>`<div class="tab-btn ${i===0?'active':''}" data-tab="${t.id}">${t.name}</div>`).join(''); 
+        document.getElementById('tabsContainer').innerHTML=html; 
+        document.querySelectorAll('.tab-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active-pane')); const id=btn.dataset.tab; if(id==='demandes') document.getElementById('tabDemandes').classList.add('active-pane'); else if(id==='register') document.getElementById('tabRegister').classList.add('active-pane'); else if(id==='today') document.getElementById('tabToday').classList.add('active-pane'); else if(id==='pending') document.getElementById('tabPending').classList.add('active-pane'); else if(id==='client') { document.getElementById('tabClient').classList.add('active-pane'); if(currentUserRole==='client') filtrerClientData(); } else if(id==='clients') document.getElementById('tabClients').classList.add('active-pane'); else if(id==='users') document.getElementById('tabUsers').classList.add('active-pane'); }); }); 
+        let firstPane=tabs[0]?.id; if(currentUserRole==='client') firstPane='client'; if(firstPane) document.getElementById(`tab${firstPane.charAt(0).toUpperCase()+firstPane.slice(1)}`)?.classList.add('active-pane'); else document.getElementById('tabToday')?.classList.add('active-pane'); 
     }
-    function saveMyNewPassword() { let old = document.getElementById('oldPasswordInput').value.trim(), np = document.getElementById('myNewPasswordInput').value.trim(), cp = document.getElementById('myConfirmPasswordInput').value.trim(); if(!old) return showToast('Ancien mot de passe requis','error'); if(!np) return showToast('Nouveau mot de passe requis','error'); if(np !== cp) return showToast('Les mots de passe ne correspondent pas','error'); let u = usersDB.find(u => u.id === currentUserId); if(!u || u.password !== old) return showToast('Ancien mot de passe incorrect','error'); database.ref(`users/${currentUserId}`).update({ password: np }); showToast('Mot de passe mis à jour'); bootstrap.Modal.getInstance(document.getElementById('changeMyPasswordModal')).hide(); }
-    
-    function openPermissionsModal(uid, un, perms) { document.getElementById('permissionsUserId').value = uid; document.getElementById('permissionsUserName').innerText = un; document.getElementById('permAjouterCommande').checked = perms.ajouterCommande||false; document.getElementById('permAjouterRealisation').checked = perms.ajouterRealisation||false; document.getElementById('permValiderDemandes').checked = perms.validerDemandes||false; document.getElementById('permAnnulerRealisation').checked = perms.annulerRealisation||false; document.getElementById('permVoirDashboard').checked = perms.voirDashboard||false; document.getElementById('permVoirDemandes').checked = perms.voirDemandes||false; document.getElementById('permVoirRegister').checked = perms.voirRegister||false; document.getElementById('permVoirToday').checked = perms.voirToday||false; document.getElementById('permVoirPending').checked = perms.voirPending||false; document.getElementById('permVoirClients').checked = perms.voirClients||false; document.getElementById('permVoirUsers').checked = perms.voirUsers||false; document.getElementById('permVoirClientSpace').checked = perms.voirClientSpace||false; new bootstrap.Modal(document.getElementById('permissionsModal')).show(); }
-    function savePermissions() { let uid = document.getElementById('permissionsUserId').value; let np = { ajouterCommande: document.getElementById('permAjouterCommande').checked, ajouterRealisation: document.getElementById('permAjouterRealisation').checked, validerDemandes: document.getElementById('permValiderDemandes').checked, annulerRealisation: document.getElementById('permAnnulerRealisation').checked, voirDashboard: document.getElementById('permVoirDashboard').checked, voirDemandes: document.getElementById('permVoirDemandes').checked, voirRegister: document.getElementById('permVoirRegister').checked, voirToday: document.getElementById('permVoirToday').checked, voirPending: document.getElementById('permVoirPending').checked, voirClients: document.getElementById('permVoirClients').checked, voirUsers: document.getElementById('permVoirUsers').checked, voirClientSpace: document.getElementById('permVoirClientSpace').checked }; database.ref(`users/${uid}`).update({ permissions: np }); showToast('Permissions mises à jour'); bootstrap.Modal.getInstance(document.getElementById('permissionsModal')).hide(); }
-    
-    function renderUsersTable() { let h = ''; usersDB.forEach(u => { let rc = u.role === 'admin' ? 'badge-admin' : (u.role === 'user' ? 'badge-user' : 'badge-transporteur'), rn = u.role === 'admin' ? '👑 Admin' : (u.role === 'user' ? '📝 Utilisateur' : '🚛 Transporteur'); let perms = u.permissions || (u.role === 'admin' ? defaultPermissions.admin : (u.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur)); let pb = ''; if(perms.ajouterCommande) pb += '<span class="badge bg-success me-1">+Cmd</span>'; if(perms.ajouterRealisation) pb += '<span class="badge bg-success me-1">+Real</span>'; if(perms.validerDemandes) pb += '<span class="badge bg-warning me-1">Valider</span>'; if(perms.annulerRealisation) pb += '<span class="badge bg-danger me-1">Annuler</span>'; let ob = ''; if(perms.voirDemandes) ob += '<span class="badge bg-info me-1">Demandes</span>'; if(perms.voirRegister) ob += '<span class="badge bg-info me-1">Enreg.</span>'; if(perms.voirToday) ob += '<span class="badge bg-info me-1">Today</span>'; if(perms.voirPending) ob += '<span class="badge bg-info me-1">Pending</span>'; if(perms.voirClients) ob += '<span class="badge bg-info me-1">Clients</span>'; if(perms.voirUsers) ob += '<span class="badge bg-info me-1">Users</span>'; if(perms.voirClientSpace) ob += '<span class="badge bg-info me-1">Client</span>'; h += `<tr>
-                <td><strong>${u.username}</strong></td>
-                <td><span class="user-badge ${rc}">${rn}</span></td>
-                <td><button class="btn btn-sm btn-info-custom me-1" onclick="openChangePassword('${u.id}', '${u.username}')"><i class="fas fa-key"></i> MDP</button>${u.username !== 'admin' && currentUserRole === 'admin' ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteUser('${u.id}', '${u.username}')"><i class="fas fa-trash"></i> Suppr</button>` : ''}</td>
-                <td>${pb}<br><small>${ob||'Aucun'}</small></td>
-                <td><button class="btn btn-sm btn-warning-custom" onclick="openPermissionsModal('${u.id}', '${u.username}', ${JSON.stringify(perms).replace(/"/g, '&quot;')})"><i class="fas fa-edit"></i> Permissions</button></td>
-            </tr>`;
-    }); document.getElementById('usersTableBody').innerHTML = h; }
-    
-    function getRealiseByCommande(cmdId) { return realisations.filter(r => r.commandeId === cmdId).reduce((s,r) => s + r.quantite, 0); }
-    function getRealisationsByCommande(cmdId) { return realisations.filter(r => r.commandeId === cmdId); }
-    function isCommandeRetardee(cmd) { let cd = new Date(cmd.timestamp), td = new Date(); td.setHours(0,0,0,0); let r = getRealiseByCommande(cmd.id); return (cd < td && r < cmd.quantite); }
-    function deleteRealisation(rid) { if(!hasPermission('annulerRealisation')) return showToast('Permission refusée', 'error'); Swal.fire({ title: 'Confirmation', text: 'Annuler cette réalisation?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Oui' }).then(res => { if(res.isConfirmed) { database.ref(`realisations/${rid}`).remove(); showToast('Réalisation annulée'); } }); }
-    function deleteCommande(cid) { if(currentUserRole !== 'admin') return showToast('Seul admin peut supprimer','error'); Swal.fire({ title: 'Confirmation', text: 'Supprimer cette commande?', icon: 'warning', showCancelButton: true }).then(res => { if(res.isConfirmed) { database.ref(`commandes/${cid}`).remove(); realisations.filter(r => r.commandeId === cid).forEach(r => database.ref(`realisations/${r.id}`).remove()); showToast('Commande supprimée'); } }); }
-    function renderCommandesListForRealisation() { let f = document.getElementById('filterCommandesList')?.value.toLowerCase() || ''; let ns = commandes.filter(c => getRealiseByCommande(c.id) < c.quantite); let fd = ns.filter(c => c.client.toLowerCase().includes(f) || c.codeClient.toLowerCase().includes(f)); let ctr = document.getElementById('commandesListContainer'); if(!ctr) return; ctr.innerHTML = ''; fd.forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100; let cd = document.createElement('div'); cd.style.cssText = 'background:var(--bg-secondary);border-radius:16px;padding:12px;margin-bottom:10px;cursor:pointer;border:2px solid var(--border-color)'; if(selectedCommandeIdForReal === cmd.id) cd.style.borderColor = '#dc2626'; cd.onclick = () => { document.querySelectorAll('.commande-card').forEach(c=>c.style.borderColor = 'var(--border-color)'); cd.style.borderColor = '#dc2626'; selectedCommandeIdForReal = cmd.id; document.getElementById('realCmdId').value = cmd.id; let dd = document.getElementById('selectedCommandeDetail'); dd.style.display = 'block'; dd.innerHTML = `<strong>Client:</strong> ${cmd.client} (${cmd.codeClient})<br><strong>Restant:</strong> ${rt} m³ / ${cmd.quantite} m³<div class="progress-custom mt-2"><div class="progress-fill" style="width:${p}%"></div></div>`; showToast(`Commande sélectionnée: ${cmd.client}`); }; cd.className = 'commande-card'; cd.innerHTML = `<div><strong>${cmd.client}</strong> <small>${cmd.codeClient}</small></div><div>📦 ${cmd.quantite} m³ | ✅ ${r} m³ | ⚠️ ${rt} m³</div><div class="progress-custom mt-1"><div class="progress-fill" style="width:${p}%"></div></div><small>📍 ${cmd.destination} - ${cmd.date} ${cmd.heure}</small>`; ctr.appendChild(cd); }); if(fd.length===0) ctr.innerHTML='<div class="text-center p-3">Aucune commande en instance</div>'; }
-    function afficherDetailClient(cn, cc) { let rc = realisations.filter(r => { let c = commandes.find(c => c.id === r.commandeId); return c && c.client === cn; }); let h = `<h6>Client: ${cn} (${cc})</h6><table class="table table-sm"><thead><tr><th>FR</th><th>Chauffeur</th><th>Qté</th><th>Date réalisation</th><th>Heure</th><th>Délai</th><th>Par</th></tr></thead><tbody>`; rc.forEach(r => { let c = commandes.find(c => c.id === r.commandeId); let d = c ? calculerDelaiPrecis(c.timestamp, r.timestamp) : '-'; h += `<tr><td><strong>${r.fr}</strong></td><td>${r.chauffeur}</td><td>${r.quantite} m³</td><td>${r.date}</td><td>${r.heure}</td><td><span class="delai-badge">⏱️ ${d}</span></td><td>${r.createdBy || '?'}</td></tr>`; }); h += `</tbody></table>`; document.getElementById('clientDetailBody').innerHTML = h; new bootstrap.Modal(document.getElementById('clientDetailModal')).show(); }
-    
-    function renderTabs() { let tabs = []; if(currentUserRole === 'client') { if(hasPermission('voirClientSpace')) tabs.push({id:'client', name:'👤 Mon espace'}); } else if(currentUserRole === 'transporteur') { if(hasPermission('voirToday')) tabs.push({id:'today', name:'📅 Commandes du jour'}); if(hasPermission('voirPending')) tabs.push({id:'pending', name:'⏳ En instance & Retard'}); } else { if(hasPermission('voirDemandes')) tabs.push({id:'demandes', name:'📋 Demandes clients'}); if(hasPermission('voirRegister')) tabs.push({id:'register', name:'📝 Enregistrement'}); if(hasPermission('voirToday')) tabs.push({id:'today', name:'📅 Commandes du jour'}); if(hasPermission('voirPending')) tabs.push({id:'pending', name:'⏳ En instance & Retard'}); if(currentUserRole === 'admin') { if(hasPermission('voirClients')) tabs.push({id:'clients', name:'👥 Base clients'}); if(hasPermission('voirUsers')) tabs.push({id:'users', name:'👥 Gestion utilisateurs'}); } } let html = tabs.map((t,i)=>`<div class="tab-btn ${i===0?'active':''}" data-tab="${t.id}">${t.name}</div>`).join(''); document.getElementById('tabsContainer').innerHTML = html; document.querySelectorAll('.tab-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active-pane')); const id = btn.dataset.tab; if(id==='demandes') document.getElementById('tabDemandes').classList.add('active-pane'); else if(id==='register') document.getElementById('tabRegister').classList.add('active-pane'); else if(id==='today') document.getElementById('tabToday').classList.add('active-pane'); else if(id==='pending') document.getElementById('tabPending').classList.add('active-pane'); else if(id==='client') document.getElementById('tabClient').classList.add('active-pane'); else if(id==='clients') document.getElementById('tabClients').classList.add('active-pane'); else if(id==='users') document.getElementById('tabUsers').classList.add('active-pane'); }); }); if(currentUserRole === 'client') { if(hasPermission('voirClientSpace')) document.getElementById('tabClient').classList.add('active-pane'); } else if(currentUserRole === 'transporteur') { if(hasPermission('voirToday')) document.getElementById('tabToday').classList.add('active-pane'); else if(hasPermission('voirPending')) document.getElementById('tabPending').classList.add('active-pane'); } else { if(hasPermission('voirDemandes')) document.getElementById('tabDemandes').classList.add('active-pane'); else if(hasPermission('voirRegister')) document.getElementById('tabRegister').classList.add('active-pane'); else if(hasPermission('voirToday')) document.getElementById('tabToday').classList.add('active-pane'); else if(hasPermission('voirPending')) document.getElementById('tabPending').classList.add('active-pane'); else if(hasPermission('voirClients')) document.getElementById('tabClients').classList.add('active-pane'); else if(hasPermission('voirUsers')) document.getElementById('tabUsers').classList.add('active-pane'); else document.getElementById('tabToday').classList.add('active-pane'); } }
-    
-    function renderAll() { if(!clientsDB.length) return; updateYesterdayDashboard(); updateClientSelect(); renderClientsTable(); renderUsersTable(); if(hasPermission('voirDashboard')) document.getElementById('dashboardRow').style.display = 'flex'; else document.getElementById('dashboardRow').style.display = 'none'; if(hasPermission('ajouterRealisation')) renderCommandesListForRealisation(); if(hasPermission('voirDemandes')) { let dh = '', dc = demandesClient.length; document.getElementById('demandesCount').innerText = dc; demandesClient.forEach(d => { dh += `<tr class="ligne-attente"><td>${d.date}</td><td>${d.heure}</td><td><strong>${d.client}</strong></td><td>${d.codeClient}</td><td>${d.produit}</td><td>${d.nbCiternes}</td><td>${d.quantite} m³</td><td>${d.destination}</td><td><span class="badge-attente">${d.createdBy}</span></td><td><button class="btn btn-sm btn-success-custom me-1" onclick="validerDemande('${d.id}')"><i class="fas fa-check"></i> Valider</button><button class="btn btn-sm btn-danger-custom" onclick="refuserDemande('${d.id}')"><i class="fas fa-times"></i> Refuser</button></td></td>`; }); document.getElementById('demandesTableBody').innerHTML = dh || '<tr><td colspan="10" class="text-center">Aucune demande en attente</td></tr>'; } if(currentUserRole !== 'client') { let tf = document.getElementById('todayFilterDate')?.value || new Date().toLocaleDateString('fr-FR'), th = ''; commandes.filter(c => c.date === tf).forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100, s = rt<=0 ? '<span class="badge-soldee">Soldée</span>' : '<span class="badge-non-soldee">Non soldée</span>'; let dels = getRealisationsByCommande(cmd.id), dl = dels.length > 0 ? dels.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure}</div>`).join('') : '<div>Aucune livraison</div>'; let acts = ''; if(currentUserRole === 'admin') acts = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`; acts += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`; th += `<tr>
-                <td>${cmd.heure||'--:--'}</td>
-                <td><strong>${cmd.client}</strong></td>
-                <td>${cmd.codeClient}</td>
-                <td>${cmd.produit}</td>
-                <td>${cmd.quantite} m³</td>
-                <td>${r} m³</td>
-                <td class="text-warning fw-bold">${rt} m³</td>
-                <td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td>
-                <td>${s}</td>
-                <tr>${dl}</td>
-                <td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td>
-                <td>${acts}</td>
-            </tr>`;
-            }); document.getElementById('todayTableBody').innerHTML = th || '<tr><td colspan="12" class="text-center">Aucune commande aujourd\'hui</td></tr>'; if(hasPermission('voirPending')) { let ph = ''; commandes.filter(c => getRealiseByCommande(c.id) < c.quantite).forEach(cmd => { let r = getRealiseByCommande(cmd.id), rt = cmd.quantite - r, p = (r/cmd.quantite)*100, ir = isCommandeRetardee(cmd), s = ir ? '<span class="badge-retard">⚠️ En retard</span>' : '<span class="badge-non-soldee">Non soldée</span>', rc = ir ? 'ligne-retard' : ''; let dels = getRealisationsByCommande(cmd.id), dl = dels.length > 0 ? dels.map(d => `<div class="detail-livraison">🚛 ${d.fr} - ${d.chauffeur} : ${d.quantite}m³ le ${d.date} à ${d.heure} ${hasPermission('annulerRealisation') ? `<button class="btn btn-sm btn-danger-custom" onclick="deleteRealisation('${d.id}')"><i class="fas fa-times"></i> Annuler</button>` : ''}</div>`).join('') : '<div>Aucune livraison</div>'; let acts = ''; if(currentUserRole === 'admin') acts = `<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`; acts += `<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`; ph += `<tr class="${rc}"><td>${cmd.date}</td><td>${cmd.heure||'--:--'}</td><td><strong>${cmd.client}</strong></td><td>${cmd.codeClient}</td><td>${cmd.produit}</td><td>${cmd.quantite} m³</td><td>${r} m³</td><td class="text-warning fw-bold">${rt} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td><td>${s}</td><td>${dl}</td><td><span class="user-badge badge-user">${cmd.createdBy || '?'}</span></td><td>${acts}</td></tr>`; }); document.getElementById('pendingTableBody').innerHTML = ph || '<tr><td colspan="13" class="text-center">Aucune commande en instance</td></tr>'; } } else { if(document.getElementById('clientFilterCode')) { document.getElementById('clientFilterCode').value = currentClientCode || ''; filtrerClientData(); } } renderTabs(); }
-    
-    function login() { 
-        const r = document.getElementById('userSelect').value; 
-        const p = document.getElementById('passwordInput').value; 
-        
-        if(r === 'client') { 
-            let cc = document.getElementById('clientCodeInput').value.trim(); 
-            if(!cc) { Swal.fire('Erreur', 'Entrez votre code client', 'error'); return; } 
-            let ce = clientsDB.find(c => c.code === cc); 
-            if(!ce) { Swal.fire('Erreur', 'Code client invalide', 'error'); return; } 
-            currentClientCode = cc; 
-            currentUserRole = 'client'; 
-            currentUserName = ce.nom; 
-            currentUserId = null; 
-            currentUserPermissions = { ajouterCommande: false, ajouterRealisation: false, validerDemandes: false, annulerRealisation: false, voirDashboard: false, voirDemandes: false, voirRegister: false, voirToday: false, voirPending: false, voirClients: false, voirUsers: false, voirClientSpace: true };
-        } else { 
-            let u = usersDB.find(u => u.username === r && u.password === p); 
-            if(!u) { Swal.fire('Erreur', 'Nom d\'utilisateur ou mot de passe incorrect', 'error'); return; } 
-            currentUserRole = u.role; 
-            currentUserName = u.username; 
-            currentUserId = u.id; 
-            currentClientCode = null; 
-            currentUserPermissions = u.permissions || (u.role === 'admin' ? defaultPermissions.admin : (u.role === 'user' ? defaultPermissions.user : defaultPermissions.transporteur)); 
-        } 
-        
-        document.getElementById('loginOverlay').style.display = 'none'; 
-        document.getElementById('mainApp').style.display = 'block'; 
-        
-        let rt = currentUserRole === 'admin' ? '👑 Admin' : (currentUserRole === 'user' ? '📝 Utilisateur' : (currentUserRole === 'transporteur' ? '🚛 Transporteur' : '👥 Client')); 
-        document.getElementById('userName').innerHTML = currentUserName; 
-        let rb = document.getElementById('userRoleBadge'); 
-        rb.innerHTML = rt; 
-        rb.className = `user-badge ${currentUserRole === 'admin' ? 'badge-admin' : (currentUserRole === 'user' ? 'badge-user' : (currentUserRole === 'transporteur' ? 'badge-transporteur' : 'badge-client'))}`; 
-        let cmb = document.getElementById('changeMyPasswordBtn'); 
-        if(cmb) cmb.style.display = (currentUserRole === 'admin' || currentUserRole === 'user') && currentUserRole !== 'transporteur' ? 'inline-block' : 'none'; 
-        renderAll(); 
-        showToast(`👋 Bonjour ${currentUserName}`); 
+    function renderAll() { 
+        if(!clientsDB.length) return; 
+        updateYesterdayDashboard(); updateClientSelect(); renderClientsTable(); renderUsersTable(); 
+        document.getElementById('dashboardRow').style.display=hasPermission('voirDashboard')?'flex':'none'; 
+        if(hasPermission('ajouterRealisation')) renderCommandesListForRealisation(); 
+        if(hasPermission('voirDemandes')) { let dh='', dc=demandesClient.length; document.getElementById('demandesCount').innerText=dc; demandesClient.forEach(d=>{ dh+=`<tr class="ligne-attente"><td>${escapeHtml(d.date)}</td><td>${escapeHtml(d.heure)}</td><td><strong>${escapeHtml(d.client)}</strong></td><td>${escapeHtml(d.codeClient)}</td><td>${escapeHtml(d.produit)}</td><td>${d.nbCiternes}</td><td>${d.quantite} m³</td><td>${escapeHtml(d.destination)}</td><td><span class="badge-attente">${escapeHtml(d.createdBy)}</span></td><td><button class="btn btn-sm btn-success-custom me-1" onclick="validerDemande('${d.id}')"><i class="fas fa-check"></i> Valider</button><button class="btn btn-sm btn-danger-custom" onclick="refuserDemande('${d.id}')"><i class="fas fa-times"></i> Refuser</button></td></tr>`; }); document.getElementById('demandesTableBody').innerHTML=dh||'<tr><td colspan="10" class="text-center">Aucune demande en attente</td></tr>'; } 
+        if(currentUserRole!=='client') { 
+            let todayFilterInput=document.getElementById('todayFilterDate')?.value; let tf=todayFilterInput?new Date(todayFilterInput).toLocaleDateString('fr-FR'):new Date().toLocaleDateString('fr-FR'); let th=''; commandes.filter(c=>c.date===tf).forEach(cmd=>{ let r=getRealiseByCommande(cmd.id), rt=cmd.quantite-r, p=(r/cmd.quantite)*100, s=rt<=0?'<span class="badge-soldee">Soldée</span>':'<span class="badge-non-soldee">Non soldée</span>'; let dels=getRealisationsByCommande(cmd.id), dl=dels.map(d=>`<div class="detail-livraison">🚛 ${escapeHtml(d.fr)} - ${escapeHtml(d.chauffeur)} : ${d.quantite}m³ le ${escapeHtml(d.date)} à ${escapeHtml(d.heure)}</div>`).join('')||'<div>Aucune livraison</div>'; let acts=currentUserRole==='admin'?`<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`:''; acts+=`<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`; th+=`<tr><td>${escapeHtml(cmd.heure||'--:--')}</td><td><strong>${escapeHtml(cmd.client)}</strong></td><td>${escapeHtml(cmd.codeClient)}</td><td>${escapeHtml(cmd.produit)}</td><td>${cmd.quantite} m³</td><td>${r} m³</td><td class="text-warning fw-bold">${rt} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td><td>${s}</td><td>${dl}</td><td><span class="user-badge badge-user">${escapeHtml(cmd.createdBy||'?')}</span></td><td>${acts}</td></tr>`; }); document.getElementById('todayTableBody').innerHTML=th||'<tr><td colspan="12" class="text-center">Aucune commande aujourd\'hui</td></tr>'; 
+            if(hasPermission('voirPending')) { let todayStr=new Date().toLocaleDateString('fr-FR'); let ph=''; commandes.filter(c=>{ let realise=getRealiseByCommande(c.id); return realise<c.quantite && c.date!==todayStr; }).forEach(cmd=>{ let r=getRealiseByCommande(cmd.id), rt=cmd.quantite-r, p=(r/cmd.quantite)*100, ir=isCommandeRetardee(cmd), s=ir?'<span class="badge-retard">⚠️ En retard</span>':'<span class="badge-non-soldee">⏳ Non soldée</span>'; let dels=getRealisationsByCommande(cmd.id), dl=dels.map(d=>`<div class="detail-livraison">🚛 ${escapeHtml(d.fr)} - ${escapeHtml(d.chauffeur)} : ${d.quantite}m³ le ${escapeHtml(d.date)} à ${escapeHtml(d.heure)} ${hasPermission('annulerRealisation')?`<button class="btn btn-sm btn-danger-custom" onclick="deleteRealisation('${d.id}')"><i class="fas fa-times"></i> Annuler</button>`:''}</div>`).join('')||'<div>Aucune livraison</div>'; let acts=currentUserRole==='admin'?`<button class="btn btn-sm btn-danger-custom" onclick="deleteCommande('${cmd.id}')"><i class="fas fa-trash"></i> Supprimer</button>`:''; acts+=`<button class="btn btn-sm btn-info-custom ms-1" onclick="afficherDetailClient('${cmd.client}','${cmd.codeClient}')"><i class="fas fa-clock"></i> Délai</button>`; ph+=`<tr><td>${escapeHtml(cmd.date)}</td><td>${escapeHtml(cmd.heure||'--:--')}</td><td><strong>${escapeHtml(cmd.client)}</strong></td><td>${escapeHtml(cmd.codeClient)}</td><td>${escapeHtml(cmd.produit)}</td><td>${cmd.quantite} m³</td><td>${r} m³</td><td class="text-warning fw-bold">${rt} m³</td><td><div class="progress-custom"><div class="progress-fill" style="width:${p}%"></div></div><small>${Math.round(p)}%</small></td><td>${s}</td><td>${dl}</td><td><span class="user-badge badge-user">${escapeHtml(cmd.createdBy||'?')}</span></td><td>${acts}</td></tr>`; }); document.getElementById('pendingTableBody').innerHTML=ph||'<tr><td colspan="13" class="text-center">✅ Aucune commande en instance ou en retard</td></tr>'; } 
+        } else { if(document.getElementById('clientFilterCode')) { document.getElementById('clientFilterCode').value=currentClientCode||''; filtrerClientData(); } } 
+        renderTabs(); 
     }
-    
-    document.getElementById('userSelect')?.addEventListener('change', function() { let sc = document.getElementById('clientCodeDiv'); if(sc) sc.style.display = this.value === 'client' ? 'block' : 'none'; document.getElementById('passwordInput').value = ''; });
+    function renderClientsTable() { let h=''; clientsDB.forEach(c=>{ h+=`<tr><td><strong>${escapeHtml(c.code)}</strong></td><td>${escapeHtml(c.nom)}</td><td>${currentUserRole==='admin'?`<button class="btn btn-sm btn-danger-custom" onclick="deleteClient('${c.id}','${c.code}')"><i class="fas fa-trash"></i> Supprimer</button>`:'—'}</td></tr>`; }); document.getElementById('clientsTableBody').innerHTML=h; }
+    function renderUsersTable() { let h=''; usersDB.forEach(u=>{ let rc=u.role==='admin'?'badge-admin':(u.role==='user'?'badge-user':'badge-transporteur'), rn=u.role==='admin'?'👑 Admin':(u.role==='user'?'📝 Utilisateur':'🚛 Transporteur'); let perms=u.permissions||(u.role==='admin'?defaultPermissions.admin:(u.role==='user'?defaultPermissions.user:defaultPermissions.transporteur)); let pb=''; if(perms.ajouterCommande) pb+='<span class="badge bg-success me-1">+Cmd</span>'; if(perms.ajouterRealisation) pb+='<span class="badge bg-success me-1">+Real</span>'; if(perms.validerDemandes) pb+='<span class="badge bg-warning me-1">Valider</span>'; if(perms.annulerRealisation) pb+='<span class="badge bg-danger me-1">Annuler</span>'; let ob=''; if(perms.voirDemandes) ob+='<span class="badge bg-info me-1">Demandes</span>'; if(perms.voirRegister) ob+='<span class="badge bg-info me-1">Enreg.</span>'; if(perms.voirToday) ob+='<span class="badge bg-info me-1">Today</span>'; if(perms.voirPending) ob+='<span class="badge bg-info me-1">Pending</span>'; if(perms.voirClients) ob+='<span class="badge bg-info me-1">Clients</span>'; if(perms.voirUsers) ob+='<span class="badge bg-info me-1">Users</span>'; if(perms.voirClientSpace) ob+='<span class="badge bg-info me-1">Client</span>'; h+=`<tr><td><strong>${escapeHtml(u.username)}</strong></td><td><span class="user-badge ${rc}">${rn}</span></td><td><button class="btn btn-sm btn-info-custom me-1" onclick="openChangePassword('${u.id}','${u.username}')"><i class="fas fa-key"></i> MDP</button>${u.username!=='admin' && currentUserRole==='admin'?`<button class="btn btn-sm btn-danger-custom" onclick="deleteUser('${u.id}','${u.username}')"><i class="fas fa-trash"></i> Suppr</button>`:''}</td><td>${pb}<br><small>${ob||'Aucun'}</small></td><td><button class="btn btn-sm btn-warning-custom" onclick="openPermissionsModal('${u.id}','${u.username}', ${JSON.stringify(perms).replace(/"/g, '&quot;')})"><i class="fas fa-edit"></i> Permissions</button></td></tr>`; }); document.getElementById('usersTableBody').innerHTML=h; }
+    window.resetAllOperationalData = async function() { if(currentUserRole!=='admin') { showToast('Permission refusée','error'); return; } const confirm=await Swal.fire({ title:'⚠️ Réinitialisation totale', text:'Toutes les commandes, réalisations et demandes clients seront supprimées.', icon:'warning', showCancelButton:true, confirmButtonText:'Oui, tout effacer' }); if(confirm.isConfirmed) { await db.ref('commandes').remove(); await db.ref('realisations').remove(); await db.ref('demandesClient').remove(); await db.ref('notifications').remove(); showToast('✅ Données opérationnelles réinitialisées'); renderAll(); } };
+
+    // ============ LOGIN AMÉLIORÉ ============
+    async function login() {
+        const errorDiv = document.getElementById('loginError');
+        errorDiv.style.display = 'none';
+        const role = document.getElementById('userSelect').value;
+        const pwd = document.getElementById('passwordInput').value;
+        if(role === 'client') {
+            let cc = document.getElementById('clientCodeInput').value.trim();
+            if(!cc) { errorDiv.innerText = 'Entrez votre code client'; errorDiv.style.display = 'block'; return; }
+            let ce = clientsDB.find(c => c.code === cc);
+            if(!ce) { errorDiv.innerText = 'Code client invalide'; errorDiv.style.display = 'block'; return; }
+            currentClientCode = cc;
+            currentUserRole = 'client';
+            currentUserName = ce.nom;
+            currentUserId = null;
+            currentUserPermissions = { ajouterCommande:false, ajouterRealisation:false, validerDemandes:false, annulerRealisation:false, voirDashboard:false, voirDemandes:false, voirRegister:false, voirToday:false, voirPending:false, voirClients:false, voirUsers:false, voirClientSpace:true };
+        } else {
+            if(!dataReady) { errorDiv.innerText = 'Chargement des données, veuillez patienter...'; errorDiv.style.display = 'block'; return; }
+            let user = usersDB.find(u => u.username === role);
+            if(!user) { errorDiv.innerText = 'Utilisateur non trouvé'; errorDiv.style.display = 'block'; return; }
+            let hashedInput = hashPassword(pwd);
+            if(user.password !== hashedInput) { errorDiv.innerText = 'Mot de passe incorrect'; errorDiv.style.display = 'block'; return; }
+            currentUserRole = user.role;
+            currentUserName = user.username;
+            currentUserId = user.id;
+            currentClientCode = null;
+            currentUserPermissions = user.permissions || (user.role==='admin'?defaultPermissions.admin:(user.role==='user'?defaultPermissions.user:defaultPermissions.transporteur));
+        }
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        let rt = currentUserRole==='admin'?'👑 Admin':(currentUserRole==='user'?'📝 Utilisateur':(currentUserRole==='transporteur'?'🚛 Transporteur':'👥 Client'));
+        document.getElementById('userName').innerHTML = escapeHtml(currentUserName);
+        let rb = document.getElementById('userRoleBadge');
+        rb.innerHTML = rt;
+        rb.className = `user-badge ${currentUserRole==='admin'?'badge-admin':(currentUserRole==='user'?'badge-user':(currentUserRole==='transporteur'?'badge-transporteur':'badge-client'))}`;
+        let cmb = document.getElementById('changeMyPasswordBtn');
+        if(cmb) cmb.style.display = (currentUserRole==='admin'||currentUserRole==='user')?'inline-block':'none';
+        let resetBtn = document.getElementById('resetAllDataBtn');
+        if(resetBtn) resetBtn.style.display = currentUserRole==='admin'?'inline-block':'none';
+        renderAll();
+        showToast(`👋 Bonjour ${currentUserName}`);
+    }
+
+    document.getElementById('userSelect')?.addEventListener('change', function() { let sc=document.getElementById('clientCodeDiv'); if(sc) sc.style.display=this.value==='client'?'block':'none'; document.getElementById('passwordInput').value=''; });
     document.getElementById('loginBtn')?.addEventListener('click', login);
-    document.getElementById('passwordInput')?.addEventListener('keypress', function(e) { if(e.key === 'Enter') login(); });
-    
-    function logout() { document.getElementById('loginOverlay').style.display = 'flex'; document.getElementById('mainApp').style.display = 'none'; document.getElementById('passwordInput').value = ''; if(document.getElementById('clientCodeInput')) document.getElementById('clientCodeInput').value = ''; currentUserRole = null; }
-    
-    document.getElementById('cmdNbCiternes')?.addEventListener('input', function(){ let nb = parseInt(this.value)||0; document.getElementById('cmdQuantite').value = (nb*27)+' m³'; });
-    function resetCommandeForm() { document.getElementById('commandeForm').reset(); document.getElementById('cmdQuantite').value = ''; let n = getCurrentDateTime(); document.getElementById('cmdDate').value = n.date; document.getElementById('cmdHeure').value = n.heure; document.getElementById('cmdClient').value = ''; showToast('Formulaire réinitialisé'); }
-    document.getElementById('commandeForm')?.addEventListener('submit', async function(e){ e.preventDefault(); if(!hasPermission('ajouterCommande')) return showToast('Permission refusée','error'); let cc = document.getElementById('cmdCodeClient').value, cn = getClientNameByCode(cc); if(!cn) return showToast('Code client invalide','error'); await checkPendingAndConfirm(cc); let nb = parseInt(document.getElementById('cmdNbCiternes').value); if(!nb) return showToast('Nombre invalide','error'); let n = getCurrentDateTime(); database.ref('commandes').push({ date: n.date, heure: n.heure, timestamp: n.timestamp, codeClient: cc, client: cn, produit: document.getElementById('cmdProduit').value, nbCiternes: nb, quantite: nb*27, destination: document.getElementById('cmdDestination').value, createdBy: currentUserName }); showToast('✅ Commande ajoutée'); resetCommandeForm(); });
-    document.getElementById('realisationForm')?.addEventListener('submit', function(e){ e.preventDefault(); if(!hasPermission('ajouterRealisation')) return showToast('Permission refusée','error'); let cid = document.getElementById('realCmdId').value; if(!cid) return showToast('Sélectionnez une commande','error'); let cmd = commandes.find(c => c.id === cid); if(!cmd) return showToast('Commande introuvable','error'); let rt = getRealiseByCommande(cid); let nq = parseFloat(document.getElementById('realQuantite').value); if(rt + nq > cmd.quantite) return showToast('Quantité dépasse le reste','error'); let n = getCurrentDateTime(); database.ref('realisations').push({ commandeId: cid, date: n.date, heure: n.heure, timestamp: n.timestamp, fr: document.getElementById('realFR').value, chauffeur: document.getElementById('realChauffeur').value, quantite: nq, createdBy: currentUserName }); showToast('✅ Réalisation ajoutée'); document.getElementById('realisationForm').reset(); document.getElementById('realCmdId').value = ''; selectedCommandeIdForReal = null; document.getElementById('selectedCommandeDetail').style.display = 'none'; });
-    document.getElementById('filterCommandesList')?.addEventListener('input', () => renderCommandesListForRealisation());
-    document.getElementById('todayFilterDate')?.addEventListener('change', () => renderAll());
-    
-    function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark')); document.getElementById('darkModeText').innerText = document.body.classList.contains('dark') ? 'Light' : 'Sombre'; }
-    if(localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark');
-    
-    let ninit = getCurrentDateTime(); if(document.getElementById('realDate')) document.getElementById('realDate').value = ninit.date; if(document.getElementById('realHeure')) document.getElementById('realHeure').value = ninit.heure; if(document.getElementById('cmdDate')) document.getElementById('cmdDate').value = ninit.date; if(document.getElementById('cmdHeure')) document.getElementById('cmdHeure').value = ninit.heure;
-    
-    loadSavedLogo(); initFirebaseData();
-    window.deleteClient = deleteClient; window.deleteUser = deleteUser; window.deleteCommande = deleteCommande; window.deleteRealisation = deleteRealisation; window.addClient = addClient; window.addUser = addUser; window.openChangePassword = openChangePassword; window.openChangeMyPassword = openChangeMyPassword; window.openPermissionsModal = openPermissionsModal; window.savePermissions = savePermissions; window.saveNewPassword = saveNewPassword; window.saveMyNewPassword = saveMyNewPassword; window.demanderRappel = demanderRappel; window.showNouvelleCommandeClient = showNouvelleCommandeClient; window.filtrerClientData = filtrerClientData; window.validerDemande = validerDemande; window.refuserDemande = refuserDemande; window.afficherDetailClient = afficherDetailClient; window.resetCommandeForm = resetCommandeForm; window.toggleDarkMode = toggleDarkMode; window.logout = logout;
+    document.getElementById('passwordInput')?.addEventListener('keypress', e=>{ if(e.key==='Enter') login(); });
+    function logout() { document.getElementById('loginOverlay').style.display='flex'; document.getElementById('mainApp').style.display='none'; document.getElementById('passwordInput').value=''; if(document.getElementById('clientCodeInput')) document.getElementById('clientCodeInput').value=''; currentUserRole=null; }
+    document.getElementById('commandeForm')?.addEventListener('submit', async function(e){ e.preventDefault(); if(!hasPermission('ajouterCommande')) return showToast('Permission refusée','error'); let cc=document.getElementById('cmdCodeClient').value, cn=getClientNameByCode(cc); if(!cn) return showToast('Code client invalide','error'); await checkPendingAndConfirm(cc); let nb=parseInt(document.getElementById('cmdNbCiternes').value); if(!nb) return showToast('Nombre invalide','error'); let n=getCurrentDateTime(); db.ref('commandes').push({ date:n.date, heure:n.heure, timestamp:n.timestamp, codeClient:cc, client:cn, produit:document.getElementById('cmdProduit').value, nbCiternes:nb, quantite:nb*27, destination:document.getElementById('cmdDestination').value, createdBy:currentUserName }); showToast('✅ Commande ajoutée'); resetCommandeForm(); });
+    document.getElementById('realisationForm')?.addEventListener('submit', function(e){ e.preventDefault(); if(!hasPermission('ajouterRealisation')) return showToast('Permission refusée','error'); let cid=document.getElementById('realCmdId').value; if(!cid) return showToast('Sélectionnez une commande','error'); let cmd=commandes.find(c=>c.id===cid); if(!cmd) return showToast('Commande introuvable','error'); let rt=getRealiseByCommande(cid); let nq=parseFloat(document.getElementById('realQuantite').value); if(rt+nq>cmd.quantite) return showToast('Quantité dépasse le reste','error'); let n=getCurrentDateTime(); db.ref('realisations').push({ commandeId:cid, date:n.date, heure:n.heure, timestamp:n.timestamp, fr:document.getElementById('realFR').value, chauffeur:document.getElementById('realChauffeur').value, quantite:nq, createdBy:currentUserName }); showToast('✅ Réalisation ajoutée'); document.getElementById('realisationForm').reset(); document.getElementById('realCmdId').value=''; selectedCommandeIdForReal=null; document.getElementById('selectedCommandeDetail').style.display='none'; });
+    document.getElementById('filterCommandesList')?.addEventListener('input',()=>renderCommandesListForRealisation());
+    document.getElementById('todayFilterDate')?.addEventListener('change',()=>renderAll());
+    document.getElementById('clientCommandeForm')?.addEventListener('submit', function(e){ e.preventDefault(); let cc=document.getElementById('clientCmdCode').value, cn=getClientNameByCode(cc), nb=parseInt(document.getElementById('clientCmdNbCiternes').value), now=getCurrentDateTime(); if(!nb||nb<=0) return showToast('Nombre de citernes invalide','error'); db.ref('demandesClient').push({ date:now.date, heure:now.heure, timestamp:now.timestamp, codeClient:cc, client:cn, produit:document.getElementById('clientCmdProduit').value, nbCiternes:nb, quantite:nb*27, destination:document.getElementById('clientCmdDestination').value, createdBy:cn, status:'en_attente' }); addNotification(`🆕 Demande commande de ${cn} (${cc}) - ${nb*27} m³ en attente`,'success','admin'); showToast('✅ Demande envoyée'); bootstrap.Modal.getInstance(document.getElementById('nouvelleCommandeModal')).hide(); renderAll(); });
+    function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark')); document.getElementById('darkModeText').innerText=document.body.classList.contains('dark')?'Light':'Sombre'; }
+    function loadSavedLogo() { let d=document.getElementById('logoDisplay'); if(savedLogo && d) d.innerHTML=`<img src="${savedLogo}" class="naftal-logo-img">`; }
+    function addLogoManually() { let i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.onchange=e=>{ let f=e.target.files[0]; if(f) { let r=new FileReader(); r.onload=ev=>{ localStorage.setItem('naftalLogo', ev.target.result); savedLogo=ev.target.result; document.getElementById('logoDisplay').innerHTML=`<img src="${ev.target.result}" class="naftal-logo-img">`; showToast('✅ Logo ajouté!'); }; r.readAsDataURL(f); } }; i.click(); }
+    if(localStorage.getItem('darkMode')==='true') document.body.classList.add('dark');
+    let now=getCurrentDateTime(); 
+    if(document.getElementById('realDate')) document.getElementById('realDate').value=now.date; 
+    if(document.getElementById('realHeure')) document.getElementById('realHeure').value=now.heure; 
+    if(document.getElementById('cmdDate')) document.getElementById('cmdDate').value=now.date; 
+    if(document.getElementById('cmdHeure')) document.getElementById('cmdHeure').value=now.heure;
+    loadSavedLogo(); 
+    // Lancer l'initialisation puis les listeners
+    resetAndInitData().then(() => {
+        attachFirebaseListeners();
+    });
+    window.deleteClient=deleteClient; window.deleteUser=deleteUser; window.deleteCommande=deleteCommande; window.deleteRealisation=deleteRealisation; window.addClient=addClient; window.addUser=addUser; window.openChangePassword=openChangePassword; window.openChangeMyPassword=openChangeMyPassword; window.openPermissionsModal=openPermissionsModal; window.savePermissions=savePermissions; window.saveNewPassword=saveNewPassword; window.saveMyNewPassword=saveMyNewPassword; window.demanderRappel=demanderRappel; window.showNouvelleCommandeClient=showNouvelleCommandeClient; window.filtrerClientData=filtrerClientData; window.validerDemande=validerDemande; window.refuserDemande=refuserDemande; window.afficherDetailClient=afficherDetailClient; window.resetCommandeForm=resetCommandeForm; window.toggleDarkMode=toggleDarkMode; window.logout=logout; window.addLogoManually=addLogoManually;
 </script>
 </body>
 </html>
